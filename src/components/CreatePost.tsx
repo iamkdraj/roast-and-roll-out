@@ -9,13 +9,16 @@ import { useTags } from "@/hooks/useTags";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface CreatePostProps {
   onClose: () => void;
-  onSubmit: (content: string, tagNames: string[], isAnonymous: boolean) => void;
+  onSubmit: (title: string, content: string, tagNames: string[], isAnonymous: boolean) => void;
 }
 
 export const CreatePost = ({ onClose, onSubmit }: CreatePostProps) => {
+  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [postAsAnonymous, setPostAsAnonymous] = useState(false);
@@ -56,6 +59,11 @@ export const CreatePost = ({ onClose, onSubmit }: CreatePostProps) => {
   };
 
   const handleSubmit = () => {
+    if (!title.trim()) {
+      toast.error("Please enter a title!");
+      return;
+    }
+
     if (!content.trim()) {
       toast.error("Please enter some content!");
       return;
@@ -76,7 +84,7 @@ export const CreatePost = ({ onClose, onSubmit }: CreatePostProps) => {
       return;
     }
 
-    onSubmit(content.trim(), selectedTags, postAsAnonymous);
+    onSubmit(title.trim(), content.trim(), selectedTags, postAsAnonymous);
   };
 
   const characterCount = content.length;
@@ -101,6 +109,19 @@ export const CreatePost = ({ onClose, onSubmit }: CreatePostProps) => {
         </CardHeader>
         
         <CardContent className="space-y-6">
+          {/* Title Input */}
+          <div>
+            <Label htmlFor="title" className="text-foreground">Title</Label>
+            <Input
+              id="title"
+              placeholder="Enter a catchy title for your roast..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="bg-background border-input"
+              maxLength={100}
+            />
+          </div>
+
           {/* Content Input */}
           <div>
             <Textarea
@@ -191,7 +212,7 @@ export const CreatePost = ({ onClose, onSubmit }: CreatePostProps) => {
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={!content.trim() || selectedTags.length === 0 || isOverLimit}
+              disabled={!title.trim() || !content.trim() || selectedTags.length === 0 || isOverLimit}
             >
               <Send className="w-4 h-4 mr-2" />
               Post Roast

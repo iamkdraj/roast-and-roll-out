@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 export interface Post {
   id: string;
+  title: string;
   content: string;
   tags: { emoji: string; name: string }[];
   upvotes: number;
@@ -91,6 +92,7 @@ export const usePosts = () => {
 
           return {
             id: post.id,
+            title: post.title,
             content: post.content,
             tags: post.post_tags.map((pt: any) => ({
               emoji: pt.tags.emoji,
@@ -153,7 +155,7 @@ export const usePosts = () => {
     }
   };
 
-  const createPost = async (content: string, tagNames: string[], isAnonymous: boolean = false) => {
+  const createPost = async (title: string, content: string, tagNames: string[], isAnonymous: boolean = false) => {
     try {
       const { data: tags, error: tagsError } = await supabase
         .from('tags')
@@ -165,6 +167,7 @@ export const usePosts = () => {
       const { data: post, error: postError } = await supabase
         .from('posts')
         .insert({
+          title,
           content,
           user_id: isAnonymous ? null : user?.id,
           is_anonymous: isAnonymous

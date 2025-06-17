@@ -175,6 +175,9 @@ export const PostCard = ({ post, onVote, onSave, onReport, onDelete, onEdit, sho
             </div>
           </div>
 
+          {/* Title */}
+          <h2 className="text-xl font-semibold text-foreground">{post.title}</h2>
+
           {/* Content */}
           {showContent ? (
             <div className="text-foreground whitespace-pre-wrap leading-relaxed text-lg">

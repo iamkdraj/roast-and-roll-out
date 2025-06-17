@@ -7,32 +7,40 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Post } from "@/hooks/usePosts";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface EditPostProps {
   post: Post;
   onClose: () => void;
-  onSave: (content: string) => Promise<void>;
+  onSave: (title: string, content: string) => Promise<void>;
 }
 
 export const EditPost = ({ post, onClose, onSave }: EditPostProps) => {
+  const [title, setTitle] = useState(post.title);
   const [content, setContent] = useState(post.content);
   const [isSaving, setIsSaving] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
   const handleSave = async () => {
+    if (!title.trim()) {
+      toast.error("Title cannot be empty!");
+      return;
+    }
+
     if (!content.trim()) {
       toast.error("Content cannot be empty!");
       return;
     }
 
-    if (content === post.content) {
+    if (title === post.title && content === post.content) {
       toast.error("No changes made!");
       return;
     }
 
     try {
       setIsSaving(true);
-      await onSave(content);
+      await onSave(title, content);
       toast.success("Post updated successfully!");
       onClose();
     } catch (error) {
@@ -89,6 +97,18 @@ export const EditPost = ({ post, onClose, onSave }: EditPostProps) => {
             </CollapsibleContent>
           </Collapsible>
 
+          {/* Title Input */}
+          <div>
+            <Label htmlFor="edit-title" className="text-foreground">Title</Label>
+            <Input
+              id="edit-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="bg-background border-input"
+              maxLength={100}
+            />
+          </div>
+
           {/* Content Input */}
           <div>
             <Textarea
@@ -114,7 +134,7 @@ export const EditPost = ({ post, onClose, onSave }: EditPostProps) => {
             </Button>
             <Button
               onClick={handleSave}
-              disabled={isSaving || !content.trim() || content === post.content}
+              disabled={isSaving || !title.trim() || !content.trim() || (title === post.title && content === post.content)}
             >
               <Save className="w-4 h-4 mr-2" />
               Save Changes
