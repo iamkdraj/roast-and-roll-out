@@ -16,6 +16,10 @@ export interface Post {
   userVote?: "upvote" | "downvote" | null;
   isSaved?: boolean;
   user_id?: string;
+  editHistory?: {
+    content: string;
+    timestamp: string;
+  }[];
 }
 
 interface VoteCounts {
@@ -290,6 +294,72 @@ export const usePosts = () => {
     }
   };
 
+  const editPost = async (postId: string, newContent: string) => {
+    if (!user) {
+      toast.error("Please log in to edit posts");
+      return;
+    }
+
+    try {
+      // First check if the user owns this post
+      const postToEdit = posts.find(p => p.id === postId);
+      if (!postToEdit || postToEdit.user_id !== user.id) {
+        toast.error("You can only edit your own posts");
+        return;
+      }
+
+      // Get current post data
+      const { data: currentPost, error: fetchError } = await supabase
+        .from('posts')
+        .select('content, edit_history')
+        .eq('id', postId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Prepare edit history
+      const editHistory = [
+        ...(currentPost.edit_history || []),
+        {
+          content: currentPost.content,
+          timestamp: new Date().toISOString()
+        }
+      ];
+
+      // Update post with new content and edit history
+      const { error: updateError } = await supabase
+        .from('posts')
+        .update({
+          content: newContent,
+          edit_history: editHistory,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', postId)
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setPosts(prevPosts =>
+        prevPosts.map(p =>
+          p.id === postId
+            ? {
+                ...p,
+                content: newContent,
+                editHistory: editHistory
+              }
+            : p
+        )
+      );
+
+      toast.success("Post updated successfully");
+    } catch (error) {
+      console.error('Error editing post:', error);
+      toast.error('Failed to edit post');
+      throw error;
+    }
+  };
+
   return {
     posts,
     loading,
@@ -298,6 +368,7 @@ export const usePosts = () => {
     savePost,
     reportPost,
     deletePost,
+    editPost,
     refreshPosts: fetchPosts
   };
 };

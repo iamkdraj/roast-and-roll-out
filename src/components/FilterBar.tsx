@@ -1,277 +1,181 @@
-
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tag } from "@/hooks/useTags";
-import { Filter, X, ChevronDown } from "lucide-react";
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { TagPill } from "@/components/TagPill";
+import { Filter, X, SlidersHorizontal, Clock, TrendingUp, ArrowUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 interface FilterBarProps {
-  tags: Tag[];
+  tags: { id: string; name: string; emoji: string }[];
   selectedTags: string[];
-  onTagChange: (tags: string[]) => void;
-  sortBy: string;
+  onTagSelect: (tagId: string) => void;
+  onClearFilters: () => void;
   onSortChange: (sort: string) => void;
+  currentSort: string;
 }
 
-export const FilterBar = ({ tags, selectedTags, onTagChange, sortBy, onSortChange }: FilterBarProps) => {
+export const FilterBar = ({ 
+  tags, 
+  selectedTags, 
+  onTagSelect, 
+  onClearFilters,
+  onSortChange,
+  currentSort 
+}: FilterBarProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      setIsCollapsed(scrollY > 100);
-    };
+  // Group tags by category
+  const languageTags = tags.filter(tag => 
+    ["Hindi", "English", "Hinglish"].includes(tag.name)
+  );
+  
+  const mainTags = tags.filter(tag => 
+    ["Roast", "Jokes", "Insults"].includes(tag.name)
+  );
+  
+  const otherTags = tags.filter(tag => 
+    !["Hindi", "English", "Hinglish", "Roast", "Jokes", "Insults"].includes(tag.name)
+  );
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const timeFilters = [
+    { value: "day", label: "Today" },
+    { value: "week", label: "This Week" },
+    { value: "month", label: "This Month" },
+    { value: "year", label: "This Year" },
+    { value: "all", label: "All Time" },
+  ];
 
-  const handleTagToggle = (tagName: string) => {
-    const newTags = selectedTags.includes(tagName)
-      ? selectedTags.filter(t => t !== tagName)
-      : [...selectedTags, tagName];
-    onTagChange(newTags);
+  const sortOptions = [
+    { value: "newest", label: "Newest", icon: ArrowUpDown },
+    { value: "oldest", label: "Oldest", icon: ArrowUpDown },
+    { value: "most_voted", label: "Most Voted", icon: TrendingUp },
+  ];
+
+  const handleTagClick = (tagId: string) => {
+    onTagSelect(tagId);
   };
 
-  const clearFilters = () => {
-    onTagChange([]);
-    onSortChange("newest");
-  };
+  const renderTagGroup = (title: string, tagGroup: typeof tags) => (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1.5">
+        <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+        <h4 className="text-xs font-medium">{title}</h4>
+      </div>
+      <ScrollArea className="w-full">
+        <div className="flex flex-wrap gap-1 pb-1">
+          {tagGroup.map((tag) => (
+            <TagPill
+              key={tag.id}
+              tag={tag}
+              isSelected={selectedTags.includes(tag.id)}
+              onClick={() => handleTagClick(tag.id)}
+              className={cn(
+                "text-xs",
+                selectedTags.includes(tag.id) && "bg-primary text-primary-foreground hover:bg-primary/90"
+              )}
+            />
+          ))}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+    </div>
+  );
 
-  const hasActiveFilters = selectedTags.length > 0 || sortBy !== "newest";
-
-  // Separate language tags from content tags
-  const languageTags = tags.filter(tag => ['Hindi', 'Hinglish', 'English'].includes(tag.name));
-  const contentTags = tags.filter(tag => !['Hindi', 'Hinglish', 'English'].includes(tag.name));
-
-  if (isCollapsed) {
-    return (
-      <div className="fixed top-20 right-4 z-40">
+  return (
+    <div className="sticky top-20 z-40 mb-4">
+      <div className="relative">
         <Button
+          variant="outline"
+          size="sm"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="bg-primary text-primary-foreground rounded-full shadow-lg hover:scale-110 transition-all"
-          size="lg"
+          className={cn(
+            "fixed right-4 z-50 shadow-lg transition-all duration-200",
+            isExpanded ? "bg-background" : "bg-background/80 backdrop-blur-sm"
+          )}
         >
-          <Filter className="w-5 h-5" />
-          {hasActiveFilters && (
-            <span className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full text-xs flex items-center justify-center text-white">
+          <Filter className="w-4 h-4 mr-2" />
+          Filter
+          {selectedTags.length > 0 && (
+            <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
               {selectedTags.length}
             </span>
           )}
         </Button>
-        
+
         {isExpanded && (
-          <div className="absolute top-12 right-0 w-80 bg-card border border-border rounded-lg shadow-xl p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-medium text-foreground">Filters</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsExpanded(false)}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            
-            {/* Sort */}
-            <div>
-              <label className="text-sm font-medium text-muted-foreground mb-2 block">Sort By</label>
-              <Select value={sortBy} onValueChange={onSortChange}>
-                <SelectTrigger className="bg-background border-border text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  <SelectItem value="newest">🕐 Newest</SelectItem>
-                  <SelectItem value="oldest">🕐 Oldest</SelectItem>
-                  <SelectItem value="upvotes">👍 Top</SelectItem>
-                  <SelectItem value="controversial">🔥 Hot</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Language Filters */}
-            <div>
-              <label className="text-sm font-medium text-muted-foreground mb-2 block">Language</label>
-              <div className="flex flex-wrap gap-2">
-                {languageTags.map((tag) => (
-                  <Badge
-                    key={tag.id}
-                    variant={selectedTags.includes(tag.name) ? "default" : "outline"}
-                    className={`cursor-pointer transition-all text-sm ${
-                      selectedTags.includes(tag.name)
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-background text-muted-foreground border-border hover:border-primary"
-                    }`}
-                    onClick={() => handleTagToggle(tag.name)}
-                    title={tag.name}
+          <div className="absolute right-0 top-12 w-80 glass-effect rounded-lg shadow-lg p-3">
+            <div className="space-y-3">
+              {/* Clear button */}
+              {selectedTags.length > 0 && (
+                <div className="flex justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onClearFilters}
+                    className="h-7 text-xs text-muted-foreground hover:text-foreground"
                   >
-                    <span className="mr-1">{tag.emoji}</span>
-                    <span className="text-xs">{tag.name}</span>
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            {/* Content Tags */}
-            <div>
-              <label className="text-sm font-medium text-muted-foreground mb-2 block">Content Tags</label>
-              <div className="flex flex-wrap gap-2">
-                {contentTags.map((tag) => (
-                  <Badge
-                    key={tag.id}
-                    variant={selectedTags.includes(tag.name) ? "default" : "outline"}
-                    className={`cursor-pointer transition-all text-sm ${
-                      selectedTags.includes(tag.name)
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-background text-muted-foreground border-border hover:border-primary"
-                    }`}
-                    onClick={() => handleTagToggle(tag.name)}
-                    title={tag.name}
-                  >
-                    <span className="mr-1">{tag.emoji}</span>
-                    <span className="text-xs">{tag.name}</span>
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            {hasActiveFilters && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearFilters}
-                className="w-full"
-              >
-                Clear All Filters
-              </Button>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b border-border py-2">
-      <div className="container mx-auto px-4">
-        {/* Compact filter bar */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="text-primary hover:text-primary/80 flex items-center space-x-1"
-            >
-              <Filter className="w-4 h-4" />
-              <span>Filters</span>
-              <ChevronDown className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-              {hasActiveFilters && (
-                <span className="ml-1 w-2 h-2 bg-primary rounded-full"></span>
+                    <X className="h-3.5 w-3.5 mr-1" />
+                    Clear filters
+                  </Button>
+                </div>
               )}
-            </Button>
 
-            {/* Selected tags preview */}
-            {selectedTags.length > 0 && (
-              <div className="flex items-center space-x-1">
-                {selectedTags.slice(0, 3).map((tagName) => {
-                  const tag = tags.find(t => t.name === tagName);
-                  return tag ? (
-                    <Badge
-                      key={tag.id}
-                      variant="secondary"
-                      className="bg-primary/20 text-primary border-primary/30 text-xs px-2 py-0.5"
-                      title={tag.name}
+              {/* Time Filter */}
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                  <h4 className="text-xs font-medium">Time Period</h4>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {timeFilters.map((filter) => (
+                    <Button
+                      key={filter.value}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onSortChange(filter.value)}
+                      className={cn(
+                        "h-7 text-xs",
+                        currentSort === filter.value
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
                     >
-                      {tag.emoji} {tag.name}
-                    </Badge>
-                  ) : null;
-                })}
-                {selectedTags.length > 3 && (
-                  <span className="text-xs text-muted-foreground">+{selectedTags.length - 3}</span>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Quick sort and clear */}
-          <div className="flex items-center space-x-2">
-            <Select value={sortBy} onValueChange={onSortChange}>
-              <SelectTrigger className="w-32 h-8 bg-card border-border text-foreground text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border">
-                <SelectItem value="newest" className="text-xs">🕐 Newest</SelectItem>
-                <SelectItem value="oldest" className="text-xs">🕐 Oldest</SelectItem>
-                <SelectItem value="upvotes" className="text-xs">👍 Top</SelectItem>
-                <SelectItem value="controversial" className="text-xs">🔥 Hot</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearFilters}
-                className="h-8 px-2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="w-3 h-3" />
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Expanded filter panel */}
-        {isExpanded && (
-          <div className="mt-4 p-4 bg-card/50 rounded-lg border border-border">
-            <div className="space-y-4">
-              {/* Language Filters */}
-              <div>
-                <label className="text-sm font-medium text-muted-foreground mb-2 block">Language</label>
-                <div className="flex flex-wrap gap-2">
-                  {languageTags.map((tag) => (
-                    <Badge
-                      key={tag.id}
-                      variant={selectedTags.includes(tag.name) ? "default" : "outline"}
-                      className={`cursor-pointer transition-all text-sm group relative ${
-                        selectedTags.includes(tag.name)
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-card text-muted-foreground border-border hover:border-primary"
-                      }`}
-                      onClick={() => handleTagToggle(tag.name)}
-                      title={tag.name}
-                    >
-                      <span className="mr-1">{tag.emoji}</span>
-                      <span className="text-xs">{tag.name}</span>
-                    </Badge>
+                      {filter.label}
+                    </Button>
                   ))}
                 </div>
               </div>
 
-              {/* Content Tags */}
-              <div>
-                <label className="text-sm font-medium text-muted-foreground mb-2 block">Content Tags</label>
-                <div className="flex flex-wrap gap-2">
-                  {contentTags.map((tag) => (
-                    <Badge
-                      key={tag.id}
-                      variant={selectedTags.includes(tag.name) ? "default" : "outline"}
-                      className={`cursor-pointer transition-all text-sm group relative ${
-                        selectedTags.includes(tag.name)
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-card text-muted-foreground border-border hover:border-primary"
-                      }`}
-                      onClick={() => handleTagToggle(tag.name)}
-                      title={tag.name}
+              {/* Sort Options */}
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  <h4 className="text-xs font-medium">Sort By</h4>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {sortOptions.map((option) => (
+                    <Button
+                      key={option.value}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onSortChange(option.value)}
+                      className={cn(
+                        "h-7 text-xs",
+                        currentSort === option.value
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
                     >
-                      <span className="mr-1">{tag.emoji}</span>
-                      <span className="text-xs">{tag.name}</span>
-                    </Badge>
+                      {option.label}
+                    </Button>
                   ))}
                 </div>
               </div>
+
+              {/* Tag Groups */}
+              {languageTags.length > 0 && renderTagGroup("Languages", languageTags)}
+              {mainTags.length > 0 && renderTagGroup("Categories", mainTags)}
+              {otherTags.length > 0 && renderTagGroup("Other Tags", otherTags)}
             </div>
           </div>
         )}
