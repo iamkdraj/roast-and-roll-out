@@ -7,17 +7,23 @@ export const ThemeToggle = () => {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={toggleTheme}
-      className="w-10 h-10 rounded-full"
-    >
-      {theme === "light" ? (
-        <Moon className="w-5 h-5" />
-      ) : (
-        <Sun className="w-5 h-5" />
-      )}
-    </Button>
+    <div className="flex items-center justify-between">
+      <div>
+        <h3 className="font-medium text-foreground">Dark Mode</h3>
+        <p className="text-sm text-muted-foreground">Toggle between light and dark mode</p>
+      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={toggleTheme}
+        className="w-12 h-12 rounded-full border border-border"
+      >
+        {theme === "light" ? (
+          <Moon className="w-5 h-5" />
+        ) : (
+          <Sun className="w-5 h-5" />
+        )}
+      </Button>
+    </div>
   );
 };
