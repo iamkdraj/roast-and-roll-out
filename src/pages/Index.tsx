@@ -76,28 +76,28 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto"></div>
-          <p className="mt-4 text-gray-400">Loading roasts...</p>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading roasts...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white pb-20">
+    <div className="min-h-screen bg-background text-foreground pb-20">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-gray-900/80 backdrop-blur-sm border-b border-gray-800">
+      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-sm border-b border-border">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-orange-500">Roastr</h1>
+              <h1 className="text-2xl font-bold text-primary">Roastr</h1>
             </div>
             <div className="flex items-center space-x-4">
               <Button
                 onClick={() => setShowCreatePost(true)}
-                className="bg-orange-600 hover:bg-orange-700 text-white hidden md:flex"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground hidden md:flex"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Post
@@ -135,9 +135,9 @@ const Index = () => {
             ))}
             
             {filteredPosts.length === 0 && !loading && (
-              <Card className="bg-gray-900 border-gray-800">
+              <Card className="bg-card border-border">
                 <CardContent className="p-8 text-center">
-                  <p className="text-gray-400">
+                  <p className="text-muted-foreground">
                     {posts.length === 0 
                       ? "No posts yet. Be the first to drop a roast! 🔥" 
                       : "No posts match your filters. Try adjusting your selection!"
@@ -159,11 +159,11 @@ const Index = () => {
       )}
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-sm border-t border-gray-800 md:hidden z-40">
+      <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border md:hidden z-40">
         <div className="flex items-center justify-around py-2">
           <Button 
             variant="ghost" 
-            className="flex flex-col items-center space-y-1 text-orange-500"
+            className="flex flex-col items-center space-y-1 text-primary"
             onClick={() => navigate("/")}
           >
             <Home className="w-5 h-5" />
@@ -171,7 +171,7 @@ const Index = () => {
           </Button>
           <Button 
             variant="ghost" 
-            className="flex flex-col items-center space-y-1 text-gray-400 hover:text-orange-500"
+            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-primary"
             onClick={() => navigate("/leaderboard")}
           >
             <Trophy className="w-5 h-5" />
@@ -179,13 +179,13 @@ const Index = () => {
           </Button>
           <Button
             onClick={() => setShowCreatePost(true)}
-            className="bg-orange-600 hover:bg-orange-700 text-white rounded-full w-12 h-12 flex items-center justify-center"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full w-12 h-12 flex items-center justify-center"
           >
             <Plus className="w-6 h-6" />
           </Button>
           <Button 
             variant="ghost" 
-            className="flex flex-col items-center space-y-1 text-gray-400 hover:text-orange-500"
+            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-primary"
             onClick={() => navigate("/saved")}
           >
             <Bookmark className="w-5 h-5" />
@@ -193,7 +193,7 @@ const Index = () => {
           </Button>
           <Button 
             variant="ghost" 
-            className="flex flex-col items-center space-y-1 text-gray-400 hover:text-orange-500"
+            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-primary"
             onClick={() => navigate("/profile")}
           >
             <User className="w-5 h-5" />

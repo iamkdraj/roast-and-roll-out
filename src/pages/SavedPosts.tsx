@@ -45,12 +45,10 @@ export default function SavedPosts() {
         savedPostsData.map(async (saved: any) => {
           const post = saved.posts;
           
-          // Get vote counts
           const { data: voteCountsData } = await supabase
             .rpc('get_vote_counts', { post_uuid: post.id });
           const voteCounts = voteCountsData as { upvotes: number; downvotes: number };
 
-          // Get user's vote
           const { data: voteData } = await supabase
             .from('votes')
             .select('vote_type')
@@ -58,7 +56,6 @@ export default function SavedPosts() {
             .eq('user_id', user.id)
             .maybeSingle();
 
-          // Get username for non-anonymous posts
           let username = "Anonymous";
           if (!post.is_anonymous && post.user_id) {
             const { data: profileData } = await supabase
@@ -82,8 +79,9 @@ export default function SavedPosts() {
             isAnonymous: post.is_anonymous,
             createdAt: post.created_at,
             isNSFW: post.post_tags.some((pt: any) => pt.tags.is_sensitive),
-            userVote: voteData?.vote_type || null,
-            isSaved: true
+            userVote: (voteData?.vote_type as "upvote" | "downvote") || null,
+            isSaved: true,
+            user_id: post.user_id
           };
         })
       );
@@ -98,36 +96,36 @@ export default function SavedPosts() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <header className="sticky top-0 z-50 bg-gray-900/80 backdrop-blur-sm border-b border-gray-800">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-sm border-b border-border">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-between">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate("/")}
-              className="text-orange-500"
+              className="text-primary"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
+              <ArrowLeft className="w-4 h-4" />
             </Button>
-            <h1 className="text-2xl font-bold text-orange-500">Saved Posts</h1>
+            <h1 className="text-xl font-bold text-primary">Saved Posts</h1>
+            <div className="w-10"></div>
           </div>
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-6">
         {savedPosts.length === 0 ? (
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-card border-border">
             <CardContent className="p-8 text-center">
-              <p className="text-gray-400">No saved posts yet. Start saving some roasts! 🔥</p>
+              <p className="text-muted-foreground">No saved posts yet. Start saving some roasts! 🔥</p>
             </CardContent>
           </Card>
         ) : (

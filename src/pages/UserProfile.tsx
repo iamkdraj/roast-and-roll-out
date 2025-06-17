@@ -1,223 +1,208 @@
 
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, MessageSquare, ThumbsUp } from "lucide-react";
+import { ArrowLeft, User } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PostCard } from "@/components/PostCard";
-import { UserNav } from "@/components/UserNav";
+import { Post } from "@/hooks/usePosts";
 import { getRandomAvatarColor, getAvatarInitials } from "@/utils/avatarUtils";
-import { usePosts } from "@/hooks/usePosts";
-
-interface UserProfile {
-  id: string;
-  username: string;
-  bio: string;
-  avatar_url: string;
-  created_at: string;
-}
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const UserProfile = () => {
-  const { userId } = useParams();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [userPosts, setUserPosts] = useState<any[]>([]);
+  const { userId } = useParams<{ userId: string }>();
+  const [userPosts, setUserPosts] = useState<Post[]>([]);
+  const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ totalPosts: 0, totalUpvotes: 0 });
-  const { vote, savePost, reportPost } = usePosts();
+  const [stats, setStats] = useState({ totalPosts: 0, totalUpvotes: 0, totalDownvotes: 0 });
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!userId) return;
-
-      try {
-        // Fetch user profile
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
-
-        if (profileData) {
-          setProfile(profileData);
-
-          // Fetch user's posts
-          const { data: postsData } = await supabase
-            .from('posts')
-            .select(`
-              *,
-              post_tags(
-                tags(name, emoji, is_sensitive)
-              )
-            `)
-            .eq('user_id', userId)
-            .eq('status', 'visible')
-            .order('created_at', { ascending: false });
-
-          if (postsData) {
-            const postsWithVotes = await Promise.all(
-              postsData.map(async (post) => {
-                const { data: voteCountsData } = await supabase
-                  .rpc('get_vote_counts', { post_uuid: post.id });
-
-                return {
-                  id: post.id,
-                  content: post.content,
-                  tags: post.post_tags.map((pt: any) => ({
-                    emoji: pt.tags.emoji,
-                    name: pt.tags.name
-                  })).filter((tag: any) => !['Hindi', 'Hinglish', 'English'].includes(tag.name)),
-                  upvotes: voteCountsData?.upvotes || 0,
-                  downvotes: voteCountsData?.downvotes || 0,
-                  username: profileData.username,
-                  isAnonymous: post.is_anonymous,
-                  createdAt: post.created_at,
-                  isNSFW: post.post_tags.some((pt: any) => pt.tags.is_sensitive),
-                  user_id: post.user_id
-                };
-              })
-            );
-
-            setUserPosts(postsWithVotes);
-            
-            // Calculate stats
-            const totalUpvotes = postsWithVotes.reduce((sum, post) => sum + post.upvotes, 0);
-            setStats({
-              totalPosts: postsWithVotes.length,
-              totalUpvotes
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching user profile:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserProfile();
+    if (userId) {
+      fetchUserData();
+    }
   }, [userId]);
+
+  const fetchUserData = async () => {
+    if (!userId) return;
+
+    try {
+      // Fetch username
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (profileData) {
+        setUsername(profileData.username);
+      }
+
+      // Fetch user posts
+      const { data: postsData, error: postsError } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          post_tags(
+            tags(name, emoji, is_sensitive)
+          )
+        `)
+        .eq('user_id', userId)
+        .eq('is_anonymous', false)
+        .eq('status', 'visible')
+        .order('created_at', { ascending: false });
+
+      if (postsError) throw postsError;
+
+      const postsWithVotes = await Promise.all(
+        postsData.map(async (post) => {
+          const { data: voteCountsData } = await supabase
+            .rpc('get_vote_counts', { post_uuid: post.id });
+
+          const voteCounts = voteCountsData as { upvotes: number; downvotes: number };
+
+          return {
+            id: post.id,
+            content: post.content,
+            tags: post.post_tags.map((pt: any) => ({
+              emoji: pt.tags.emoji,
+              name: pt.tags.name
+            })),
+            upvotes: voteCounts?.upvotes || 0,
+            downvotes: voteCounts?.downvotes || 0,
+            username: profileData?.username || "Unknown",
+            isAnonymous: false,
+            createdAt: post.created_at,
+            isNSFW: post.post_tags.some((pt: any) => pt.tags.is_sensitive),
+            userVote: null,
+            isSaved: false,
+            user_id: post.user_id
+          };
+        })
+      );
+
+      setUserPosts(postsWithVotes);
+
+      // Calculate stats
+      const totalUpvotes = postsWithVotes.reduce((sum, post) => sum + post.upvotes, 0);
+      const totalDownvotes = postsWithVotes.reduce((sum, post) => sum + post.downvotes, 0);
+      
+      setStats({
+        totalPosts: postsWithVotes.length,
+        totalUpvotes,
+        totalDownvotes
+      });
+
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto"></div>
-          <p className="mt-4 text-gray-400">Loading profile...</p>
-        </div>
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  if (!profile) {
-    return (
-      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">User not found</h2>
-          <Button onClick={() => navigate("/")}>Go back home</Button>
-        </div>
-      </div>
-    );
-  }
+  const avatarColor = getRandomAvatarColor(username);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white pb-20">
-      <header className="sticky top-0 z-50 bg-gray-900/80 backdrop-blur-sm border-b border-gray-800">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-sm border-b border-border">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/")}
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-              <h1 className="text-2xl font-bold text-orange-500">Profile</h1>
-            </div>
-            <UserNav />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/")}
+              className="text-primary"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <h1 className="text-xl font-bold text-primary">{username}'s Profile</h1>
+            <div className="w-10"></div>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Profile Info */}
-          <div className="lg:col-span-1">
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-6">
-                <div className="text-center">
-                  {profile.avatar_url ? (
-                    <img
-                      src={profile.avatar_url}
-                      alt={profile.username}
-                      className="w-24 h-24 rounded-full mx-auto mb-4"
-                    />
-                  ) : (
-                    <div className={`w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center text-white font-bold text-2xl ${getRandomAvatarColor(profile.username)}`}>
-                      {getAvatarInitials(profile.username)}
-                    </div>
-                  )}
-                  <h2 className="text-2xl font-bold text-white mb-2">{profile.username}</h2>
-                  {profile.bio && (
-                    <p className="text-gray-400 mb-4">{profile.bio}</p>
-                  )}
-                  <div className="flex items-center justify-center text-sm text-gray-500 mb-4">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    Joined {new Date(profile.created_at).toLocaleDateString()}
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div className="bg-gray-800 rounded-lg p-3">
-                      <div className="flex items-center justify-center mb-1">
-                        <MessageSquare className="w-4 h-4 text-orange-500 mr-1" />
-                      </div>
-                      <div className="text-xl font-bold text-white">{stats.totalPosts}</div>
-                      <div className="text-xs text-gray-400">Posts</div>
-                    </div>
-                    <div className="bg-gray-800 rounded-lg p-3">
-                      <div className="flex items-center justify-center mb-1">
-                        <ThumbsUp className="w-4 h-4 text-orange-500 mr-1" />
-                      </div>
-                      <div className="text-xl font-bold text-white">{stats.totalUpvotes}</div>
-                      <div className="text-xs text-gray-400">Upvotes</div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* User Info */}
+        <Card className="bg-card border-border">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-16 w-16">
+                <AvatarFallback className={`${avatarColor} text-white text-lg font-bold`}>
+                  {getAvatarInitials(username)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">{username}</h2>
+                <p className="text-muted-foreground">Roast enthusiast</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* User Posts */}
-          <div className="lg:col-span-2">
-            <Card className="bg-gray-900 border-gray-800">
-              <CardHeader>
-                <CardTitle className="text-orange-500">Posts by {profile.username}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {userPosts.map((post) => (
-                    <PostCard
-                      key={post.id}
-                      post={post}
-                      onVote={vote}
-                      onSave={savePost}
-                      onReport={reportPost}
-                      onDelete={() => {}}
-                      showNSFW={true}
-                    />
-                  ))}
-                  
-                  {userPosts.length === 0 && (
-                    <div className="text-center py-8 text-gray-400">
-                      No posts yet from this user.
-                    </div>
-                  )}
-                </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">Total Posts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">{stats.totalPosts}</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">Total Upvotes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-500">{stats.totalUpvotes}</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">Total Downvotes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-500">{stats.totalDownvotes}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* User Posts */}
+        <div>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{username}'s Posts</h2>
+          {userPosts.length === 0 ? (
+            <Card className="bg-card border-border">
+              <CardContent className="p-8 text-center">
+                <User className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No public posts yet.</p>
               </CardContent>
             </Card>
-          </div>
+          ) : (
+            <div className="space-y-4">
+              {userPosts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  onVote={() => {}}
+                  onSave={() => {}}
+                  onReport={() => {}}
+                  onDelete={() => {}}
+                  showNSFW={true}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

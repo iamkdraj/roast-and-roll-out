@@ -1,12 +1,14 @@
+
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ThumbsUp, ThumbsDown, Bookmark, MoreHorizontal, Flag, AlertTriangle, Trash2 } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Bookmark, MoreHorizontal, Flag, AlertTriangle, Trash2, Share } from "lucide-react";
 import { Post } from "@/hooks/usePosts";
 import { useAuth } from "@/hooks/useAuth";
 import { getRandomAvatarColor, getAvatarInitials } from "@/utils/avatarUtils";
+import { toast } from "sonner";
 
 interface PostCardProps {
   post: Post;
@@ -25,6 +27,31 @@ export const PostCard = ({ post, onVote, onSave, onReport, onDelete, showNSFW, o
   const handleUsernameClick = () => {
     if (onUsernameClick && post.user_id && !post.isAnonymous) {
       onUsernameClick(post.user_id);
+    }
+  };
+
+  const handleShare = async () => {
+    const shareText = `Check out this roast: ${post.content.substring(0, 100)}...`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Roastr Post',
+          text: shareText,
+          url: window.location.href
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    } else {
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(`${shareText} ${window.location.href}`);
+        toast.success("Link copied to clipboard!");
+      } catch (error) {
+        console.error('Error copying to clipboard:', error);
+        toast.error("Failed to copy link");
+      }
     }
   };
 
@@ -52,8 +79,11 @@ export const PostCard = ({ post, onVote, onSave, onReport, onDelete, showNSFW, o
 
   const timeAgo = formatDate(post.createdAt);
 
+  // Filter out language tags for display
+  const displayTags = post.tags.filter(tag => !['Hindi', 'Hinglish', 'English'].includes(tag.name));
+
   return (
-    <Card className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-colors">
+    <Card className="bg-card border-border hover:border-primary/30 transition-colors">
       <CardContent className="p-4">
         <div className="flex items-start space-x-3">
           {/* Avatar */}
@@ -63,25 +93,27 @@ export const PostCard = ({ post, onVote, onSave, onReport, onDelete, showNSFW, o
 
           <div className="flex-1 min-w-0">
             {/* Header */}
-            <div className="flex items-center space-x-2 mb-2">
-              <button
-                onClick={handleUsernameClick}
-                className={`font-semibold text-white ${
-                  !post.isAnonymous && post.user_id 
-                    ? 'hover:text-orange-500 cursor-pointer' 
-                    : 'cursor-default'
-                }`}
-                disabled={post.isAnonymous || !post.user_id}
-              >
-                {post.username}
-              </button>
-              <span className="text-gray-500 text-sm">{timeAgo}</span>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handleUsernameClick}
+                  className={`font-semibold text-foreground ${
+                    !post.isAnonymous && post.user_id 
+                      ? 'hover:text-primary cursor-pointer' 
+                      : 'cursor-default'
+                  }`}
+                  disabled={post.isAnonymous || !post.user_id}
+                >
+                  {post.username}
+                </button>
+                <span className="text-muted-foreground text-sm">{timeAgo}</span>
+              </div>
               {canDelete && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => onDelete(post.id)}
-                  className="ml-auto text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                  className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
@@ -89,16 +121,16 @@ export const PostCard = ({ post, onVote, onSave, onReport, onDelete, showNSFW, o
             </div>
 
             {/* Tags */}
-            {post.tags.length > 0 && (
+            {displayTags.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-3">
-                {post.tags.map((tag, index) => (
+                {displayTags.map((tag, index) => (
                   <Badge
                     key={index}
                     variant="secondary"
                     className={`text-xs px-2 py-1 ${
                       tag.name === 'NSFW' 
                         ? 'bg-red-600/20 text-red-400 border-red-600/30'
-                        : 'bg-orange-600/20 text-orange-400 border-orange-600/30'
+                        : 'bg-primary/20 text-primary border-primary/30'
                     }`}
                   >
                     {tag.emoji} {tag.name}
@@ -109,14 +141,14 @@ export const PostCard = ({ post, onVote, onSave, onReport, onDelete, showNSFW, o
 
             {/* Content */}
             {showContent ? (
-              <p className="text-gray-300 whitespace-pre-wrap mb-4">{post.content}</p>
+              <p className="text-foreground whitespace-pre-wrap mb-4">{post.content}</p>
             ) : (
-              <div className="mb-4 p-4 bg-gray-800 rounded-lg border border-red-600/30">
+              <div className="mb-4 p-4 bg-muted rounded-lg border border-red-600/30">
                 <div className="flex items-center space-x-2 mb-2">
                   <AlertTriangle className="w-5 h-5 text-red-400" />
                   <span className="text-red-400 font-medium">NSFW Content</span>
                 </div>
-                <p className="text-gray-400 text-sm mb-3">
+                <p className="text-muted-foreground text-sm mb-3">
                   This post may contain sensitive content. Click to view.
                 </p>
                 <Button
@@ -132,12 +164,12 @@ export const PostCard = ({ post, onVote, onSave, onReport, onDelete, showNSFW, o
 
             {/* Actions */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-1">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => onVote(post.id, "upvote")}
-                  className={`text-gray-400 hover:text-green-400 ${
+                  className={`text-muted-foreground hover:text-green-400 px-2 ${
                     post.userVote === "upvote" ? "text-green-400" : ""
                   }`}
                 >
@@ -149,7 +181,7 @@ export const PostCard = ({ post, onVote, onSave, onReport, onDelete, showNSFW, o
                   variant="ghost"
                   size="sm"
                   onClick={() => onVote(post.id, "downvote")}
-                  className={`text-gray-400 hover:text-red-400 ${
+                  className={`text-muted-foreground hover:text-red-400 px-2 ${
                     post.userVote === "downvote" ? "text-red-400" : ""
                   }`}
                 >
@@ -158,25 +190,34 @@ export const PostCard = ({ post, onVote, onSave, onReport, onDelete, showNSFW, o
                 </Button>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => onSave(post.id)}
-                  className={`text-gray-400 hover:text-blue-400 ${
+                  className={`text-muted-foreground hover:text-blue-400 px-2 ${
                     post.isSaved ? "text-blue-400" : ""
                   }`}
                 >
                   <Bookmark className="w-4 h-4" />
                 </Button>
 
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleShare}
+                  className="text-muted-foreground hover:text-primary px-2"
+                >
+                  <Share className="w-4 h-4" />
+                </Button>
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-300">
+                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground px-2">
                       <MoreHorizontal className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="bg-gray-800 border-gray-700">
+                  <DropdownMenuContent className="bg-card border-border">
                     <DropdownMenuItem
                       onClick={() => onReport(post.id)}
                       className="text-red-400 hover:text-red-300 hover:bg-red-900/20"

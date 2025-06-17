@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Palette, Bell, Shield, Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { UserNav } from "@/components/UserNav";
 import { useTheme } from "@/hooks/useTheme";
 
 const Settings = () => {
@@ -37,35 +36,33 @@ const Settings = () => {
   const handleThemeSelect = (themeId: string) => {
     setSelectedTheme(themeId);
     localStorage.setItem('appTheme', themeId);
-    // Apply theme to document
     document.documentElement.setAttribute('data-theme', themeId);
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white pb-20">
-      <header className="sticky top-0 z-50 bg-gray-900/80 backdrop-blur-sm border-b border-gray-800">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-sm border-b border-border">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/profile")}
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-              <h1 className="text-2xl font-bold text-orange-500">Settings</h1>
-            </div>
-            <UserNav />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/profile")}
+              className="text-primary"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <h1 className="text-xl font-bold text-primary">Settings</h1>
+            <div className="w-10"></div>
           </div>
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-6 space-y-6">
         {/* Appearance Settings */}
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-orange-500 flex items-center space-x-2">
+            <CardTitle className="text-primary flex items-center space-x-2">
               <Palette className="w-5 h-5" />
               <span>Appearance</span>
             </CardTitle>
@@ -73,8 +70,8 @@ const Settings = () => {
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-medium text-white">Dark Mode</h3>
-                <p className="text-sm text-gray-400">Toggle between light and dark mode</p>
+                <h3 className="font-medium text-foreground">Dark Mode</h3>
+                <p className="text-sm text-muted-foreground">Toggle between light and dark mode</p>
               </div>
               <Switch
                 checked={theme === 'dark'}
@@ -83,7 +80,7 @@ const Settings = () => {
             </div>
 
             <div>
-              <h3 className="font-medium text-white mb-4">App Theme</h3>
+              <h3 className="font-medium text-foreground mb-4">App Theme</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {themes.map((themeOption) => (
                   <div
@@ -91,13 +88,13 @@ const Settings = () => {
                     className={`p-3 rounded-lg border-2 cursor-pointer transition-all hover:scale-105 ${
                       selectedTheme === themeOption.id
                         ? themeOption.colors
-                        : 'bg-gray-800 border-gray-700 hover:border-gray-600'
+                        : 'bg-muted border-border hover:border-primary'
                     }`}
                     onClick={() => handleThemeSelect(themeOption.id)}
                   >
                     <div className="text-center">
                       <div className="text-2xl mb-2">{themeOption.icon}</div>
-                      <div className="text-sm font-medium text-white">{themeOption.name}</div>
+                      <div className="text-sm font-medium text-foreground">{themeOption.name}</div>
                     </div>
                   </div>
                 ))}
@@ -107,9 +104,9 @@ const Settings = () => {
         </Card>
 
         {/* Content Settings */}
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-orange-500 flex items-center space-x-2">
+            <CardTitle className="text-primary flex items-center space-x-2">
               <Shield className="w-5 h-5" />
               <span>Content</span>
             </CardTitle>
@@ -117,8 +114,8 @@ const Settings = () => {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-medium text-white">Show NSFW Content</h3>
-                <p className="text-sm text-gray-400">Always show NSFW posts in your feed</p>
+                <h3 className="font-medium text-foreground">Show NSFW Content</h3>
+                <p className="text-sm text-muted-foreground">Always show NSFW posts in your feed</p>
               </div>
               <Switch
                 checked={showNSFW}
@@ -129,9 +126,9 @@ const Settings = () => {
         </Card>
 
         {/* Notification Settings */}
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-orange-500 flex items-center space-x-2">
+            <CardTitle className="text-primary flex items-center space-x-2">
               <Bell className="w-5 h-5" />
               <span>Notifications</span>
             </CardTitle>
@@ -139,8 +136,8 @@ const Settings = () => {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-medium text-white">Push Notifications</h3>
-                <p className="text-sm text-gray-400">Receive notifications for votes and replies</p>
+                <h3 className="font-medium text-foreground">Push Notifications</h3>
+                <p className="text-sm text-muted-foreground">Receive notifications for votes and replies</p>
               </div>
               <Switch
                 checked={notifications}
@@ -151,18 +148,18 @@ const Settings = () => {
         </Card>
 
         {/* Language Settings */}
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-orange-500 flex items-center space-x-2">
+            <CardTitle className="text-primary flex items-center space-x-2">
               <Globe className="w-5 h-5" />
               <span>Language</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div>
-              <h3 className="font-medium text-white mb-2">App Language</h3>
-              <p className="text-sm text-gray-400">Currently: English</p>
-              <p className="text-xs text-gray-500 mt-1">More languages coming soon!</p>
+              <h3 className="font-medium text-foreground mb-2">App Language</h3>
+              <p className="text-sm text-muted-foreground">Currently: English</p>
+              <p className="text-xs text-muted-foreground mt-1">More languages coming soon!</p>
             </div>
           </CardContent>
         </Card>
