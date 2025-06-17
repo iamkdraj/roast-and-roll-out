@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,7 +32,10 @@ const Index = () => {
 
     if (selectedTags.length > 0) {
       filtered = filtered.filter(post => 
-        selectedTags.some(tagName => post.tags.some(tag => tag.name === tagName))
+        selectedTags.some(tagId => {
+          const selectedTag = tags.find(t => t.id === tagId);
+          return selectedTag && post.tags.some(tag => tag.name === selectedTag.name);
+        })
       );
     }
 
@@ -44,16 +46,33 @@ const Index = () => {
       case "oldest":
         filtered.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
         break;
-      case "upvotes":
+      case "most_voted":
         filtered.sort((a, b) => b.upvotes - a.upvotes);
         break;
-      case "controversial":
-        filtered.sort((a, b) => (b.downvotes / Math.max(b.upvotes, 1)) - (a.downvotes / Math.max(a.upvotes, 1)));
+      case "day":
+        const dayAgo = new Date();
+        dayAgo.setDate(dayAgo.getDate() - 1);
+        filtered = filtered.filter(post => new Date(post.createdAt) >= dayAgo);
+        break;
+      case "week":
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        filtered = filtered.filter(post => new Date(post.createdAt) >= weekAgo);
+        break;
+      case "month":
+        const monthAgo = new Date();
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        filtered = filtered.filter(post => new Date(post.createdAt) >= monthAgo);
+        break;
+      case "year":
+        const yearAgo = new Date();
+        yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+        filtered = filtered.filter(post => new Date(post.createdAt) >= yearAgo);
         break;
     }
 
     setFilteredPosts(filtered);
-  }, [posts, selectedTags, sortBy, showNSFW]);
+  }, [posts, selectedTags, sortBy, showNSFW, tags]);
 
   // Update NSFW setting from localStorage
   useEffect(() => {
@@ -72,6 +91,19 @@ const Index = () => {
 
   const handleUsernameClick = (userId: string) => {
     navigate(`/user/${userId}`);
+  };
+
+  const handleTagSelect = (tagId: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tagId) 
+        ? prev.filter(id => id !== tagId)
+        : [...prev, tagId]
+    );
+  };
+
+  const handleEdit = async (postId: string, content: string) => {
+    // Implement edit functionality
+    return Promise.resolve();
   };
 
   if (loading) {
@@ -112,43 +144,30 @@ const Index = () => {
       <FilterBar
         tags={tags}
         selectedTags={selectedTags}
-        onTagChange={setSelectedTags}
-        sortBy={sortBy}
+        onTagSelect={handleTagSelect}
+        onClearFilters={() => setSelectedTags([])}
         onSortChange={setSortBy}
+        currentSort={sortBy}
       />
 
-      <div className="container mx-auto px-4 py-6">
-        {/* Main Feed */}
-        <div className="max-w-4xl mx-auto">
-          <div className="space-y-4">
-            {filteredPosts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                onVote={vote}
-                onSave={savePost}
-                onReport={reportPost}
-                onDelete={deletePost}
-                showNSFW={showNSFW}
-                onUsernameClick={handleUsernameClick}
-              />
-            ))}
-            
-            {filteredPosts.length === 0 && !loading && (
-              <Card className="bg-card border-border">
-                <CardContent className="p-8 text-center">
-                  <p className="text-muted-foreground">
-                    {posts.length === 0 
-                      ? "No posts yet. Be the first to drop a roast! 🔥" 
-                      : "No posts match your filters. Try adjusting your selection!"
-                    }
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
+        <div className="space-y-6">
+          {filteredPosts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              onVote={vote}
+              onSave={savePost}
+              onReport={reportPost}
+              onDelete={deletePost}
+              onEdit={handleEdit}
+              showNSFW={showNSFW}
+              onUsernameClick={handleUsernameClick}
+            />
+          ))}
         </div>
-      </div>
+      </main>
 
       {/* Create Post Modal */}
       {showCreatePost && (

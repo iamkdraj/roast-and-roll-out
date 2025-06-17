@@ -1,15 +1,14 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Palette, Bell, Shield, Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme } from "next-themes";
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [showNSFW, setShowNSFW] = useState(localStorage.getItem('showNSFW') === 'true');
   const [notifications, setNotifications] = useState(true);
 
@@ -53,7 +52,7 @@ const Settings = () => {
               </div>
               <Switch
                 checked={theme === 'dark'}
-                onCheckedChange={toggleTheme}
+                onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
               />
             </div>
           </CardContent>
