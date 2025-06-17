@@ -1,13 +1,14 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { X, Send } from "lucide-react";
+import { X, Send, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { useTags } from "@/hooks/useTags";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface CreatePostProps {
   onClose: () => void;
@@ -18,8 +19,33 @@ export const CreatePost = ({ onClose, onSubmit }: CreatePostProps) => {
   const [content, setContent] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [postAsAnonymous, setPostAsAnonymous] = useState(false);
+  const [isTagsOpen, setIsTagsOpen] = useState(false);
+  const [anonymousPostCount, setAnonymousPostCount] = useState(0);
   const { tags } = useTags();
   const { user } = useAuth();
+
+  // Check anonymous post count
+  useEffect(() => {
+    const checkAnonymousPosts = async () => {
+      if (!user) return;
+      
+      const twentyFourHoursAgo = new Date();
+      twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+      const { data, error } = await supabase
+        .from('posts')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_anonymous', true)
+        .gte('created_at', twentyFourHoursAgo.toISOString());
+
+      if (!error && data) {
+        setAnonymousPostCount(data.length);
+      }
+    };
+
+    checkAnonymousPosts();
+  }, [user]);
 
   const handleTagToggle = (tagName: string) => {
     setSelectedTags(prev => 
@@ -45,22 +71,30 @@ export const CreatePost = ({ onClose, onSubmit }: CreatePostProps) => {
       return;
     }
 
+    if (postAsAnonymous && anonymousPostCount >= 2) {
+      toast.error("You've reached the limit of 2 anonymous posts in 24 hours!");
+      return;
+    }
+
     onSubmit(content.trim(), selectedTags, postAsAnonymous);
   };
 
   const characterCount = content.length;
   const isOverLimit = characterCount > 2000;
 
+  // Separate default tags and other tags
+  const defaultTags = tags.filter(tag => ['Roast', 'Joke', 'Insult'].includes(tag.name));
+  const otherTags = tags.filter(tag => !['Roast', 'Joke', 'Insult'].includes(tag.name));
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-2xl bg-gray-900 border-gray-800">
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-2xl">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-orange-500">Create a Post</CardTitle>
+          <CardTitle>Create a Post</CardTitle>
           <Button
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="text-gray-400 hover:text-white"
           >
             <X className="w-4 h-4" />
           </Button>
@@ -73,31 +107,27 @@ export const CreatePost = ({ onClose, onSubmit }: CreatePostProps) => {
               placeholder="What's your roast? Drop your joke, insult, or roast here..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="min-h-[120px] bg-gray-800 border-gray-700 text-white placeholder-gray-400 resize-none"
+              className="min-h-[120px] resize-none"
               maxLength={2000}
             />
             <div className="flex justify-between items-center mt-2">
-              <span className={`text-sm ${isOverLimit ? 'text-red-500' : 'text-gray-400'}`}>
+              <span className={`text-sm ${isOverLimit ? 'text-destructive' : 'text-muted-foreground'}`}>
                 {characterCount}/2000 characters
               </span>
             </div>
           </div>
 
-          {/* Tag Selection */}
+          {/* Default Tags */}
           <div>
-            <h3 className="text-sm font-medium text-gray-300 mb-3">
+            <h3 className="text-sm font-medium mb-3">
               Select Tags (at least one required)
             </h3>
             <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
+              {defaultTags.map((tag) => (
                 <Badge
                   key={tag.id}
                   variant={selectedTags.includes(tag.name) ? "default" : "outline"}
-                  className={`cursor-pointer transition-all ${
-                    selectedTags.includes(tag.name)
-                      ? "bg-orange-600 text-white border-orange-600"
-                      : "bg-gray-800 text-gray-300 border-gray-600 hover:border-orange-500"
-                  }`}
+                  className="cursor-pointer"
                   onClick={() => handleTagToggle(tag.name)}
                 >
                   {tag.emoji} {tag.name}
@@ -106,19 +136,48 @@ export const CreatePost = ({ onClose, onSubmit }: CreatePostProps) => {
             </div>
           </div>
 
-          {/* Anonymous Toggle */}
+          {/* Other Tags */}
+          <Collapsible open={isTagsOpen} onOpenChange={setIsTagsOpen}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium">
+                More Tags
+              </h3>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  {isTagsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+            <CollapsibleContent>
+              <div className="flex flex-wrap gap-2 mt-3">
+                {otherTags.map((tag) => (
+                  <Badge
+                    key={tag.id}
+                    variant={selectedTags.includes(tag.name) ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => handleTagToggle(tag.name)}
+                  >
+                    {tag.emoji} {tag.name}
+                  </Badge>
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Anonymous Post Button */}
           {user && (
-            <div className="flex items-center space-x-3 p-4 bg-gray-800 rounded-lg">
-              <input
-                type="checkbox"
-                id="anonymous"
-                checked={postAsAnonymous}
-                onChange={(e) => setPostAsAnonymous(e.target.checked)}
-                className="rounded border-gray-600 text-orange-500 focus:ring-orange-500"
-              />
-              <label htmlFor="anonymous" className="text-sm text-gray-300 cursor-pointer">
-                Post anonymously
-              </label>
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                {anonymousPostCount}/2 anonymous posts in 24h
+              </div>
+              <Button
+                variant={postAsAnonymous ? "default" : "outline"}
+                size="sm"
+                onClick={() => setPostAsAnonymous(!postAsAnonymous)}
+                disabled={anonymousPostCount >= 2 && !postAsAnonymous}
+              >
+                {postAsAnonymous ? "Posting Anonymously" : "Post Anonymously"}
+              </Button>
             </div>
           )}
 
@@ -127,14 +186,12 @@ export const CreatePost = ({ onClose, onSubmit }: CreatePostProps) => {
             <Button
               variant="outline"
               onClick={onClose}
-              className="border-gray-600 text-gray-300 hover:bg-gray-800"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={!content.trim() || selectedTags.length === 0 || isOverLimit}
-              className="bg-orange-600 hover:bg-orange-700 text-white"
             >
               <Send className="w-4 h-4 mr-2" />
               Post Roast

@@ -1,14 +1,14 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ThumbsUp, ThumbsDown, Bookmark, MoreHorizontal, Flag, AlertTriangle, Trash2, Share } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Bookmark, MoreHorizontal, Flag, AlertTriangle, Trash2, Share, ChevronDown, ChevronUp } from "lucide-react";
 import { Post } from "@/hooks/usePosts";
 import { useAuth } from "@/hooks/useAuth";
 import { getRandomAvatarColor, getAvatarInitials } from "@/utils/avatarUtils";
 import { toast } from "sonner";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface PostCardProps {
   post: Post;
@@ -23,6 +23,7 @@ interface PostCardProps {
 export const PostCard = ({ post, onVote, onSave, onReport, onDelete, showNSFW, onUsernameClick }: PostCardProps) => {
   const { user } = useAuth();
   const [showContent, setShowContent] = useState(!post.isNSFW || showNSFW);
+  const [showMoreTags, setShowMoreTags] = useState(false);
 
   const handleUsernameClick = () => {
     if (onUsernameClick && post.user_id && !post.isAnonymous) {
@@ -72,6 +73,8 @@ export const PostCard = ({ post, onVote, onSave, onReport, onDelete, showNSFW, o
 
   const timeAgo = formatDate(post.createdAt);
   const displayTags = post.tags.filter(tag => !['Hindi', 'Hinglish', 'English'].includes(tag.name));
+  const visibleTags = displayTags.slice(0, 2);
+  const hiddenTags = displayTags.slice(2);
 
   return (
     <Card className="post-card">
@@ -99,12 +102,30 @@ export const PostCard = ({ post, onVote, onSave, onReport, onDelete, showNSFW, o
                   <div className="flex items-center space-x-2">
                     {/* Tags - Only emojis, smaller, on the right */}
                     {displayTags.length > 0 && (
-                      <div className="flex gap-1">
-                        {displayTags.map((tag, index) => (
+                      <div className="flex items-center gap-1">
+                        {visibleTags.map((tag, index) => (
                           <span key={index} className="text-lg">
                             {tag.emoji}
                           </span>
                         ))}
+                        {hiddenTags.length > 0 && (
+                          <Collapsible open={showMoreTags} onOpenChange={setShowMoreTags}>
+                            <CollapsibleTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                <ChevronDown className={`w-4 h-4 transition-transform ${showMoreTags ? 'rotate-180' : ''}`} />
+                              </Button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="absolute right-0 mt-1 bg-card border rounded-md shadow-lg p-2 z-10">
+                              <div className="flex flex-wrap gap-1">
+                                {hiddenTags.map((tag, index) => (
+                                  <span key={index} className="text-lg">
+                                    {tag.emoji}
+                                  </span>
+                                ))}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        )}
                       </div>
                     )}
                     {canDelete && (
@@ -219,6 +240,15 @@ export const PostCard = ({ post, onVote, onSave, onReport, onDelete, showNSFW, o
                       <Flag className="w-4 h-4 mr-2" />
                       Report
                     </DropdownMenuItem>
+                    {canDelete && (
+                      <DropdownMenuItem
+                        onClick={() => onDelete(post.id)}
+                        className="text-red-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer border-t border-border"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
