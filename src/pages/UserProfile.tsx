@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -132,7 +131,7 @@ const UserProfile = () => {
 
       <div className="container mx-auto px-4 py-6 space-y-6">
         {/* User Info Card */}
-        <Card className="bg-card border-border">
+        <Card className="stats-card">
           <CardContent className="p-8">
             <div className="flex items-center justify-center space-x-6">
               <Avatar className="h-20 w-20">
@@ -148,41 +147,29 @@ const UserProfile = () => {
           </CardContent>
         </Card>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-card border-border hover:shadow-md transition-shadow">
-            <CardContent className="p-6 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <FileText className="w-8 h-8 text-primary" />
-              </div>
-              <div className="text-3xl font-bold text-primary mb-1">{stats.totalPosts}</div>
-              <div className="text-sm text-muted-foreground">Total Posts</div>
-            </CardContent>
-          </Card>
+        {/* Stats Cards in a Row */}
+        <div className="flex gap-4 justify-center">
+          <div className="flex flex-col items-center p-4 bg-card border border-border rounded-lg stats-card min-w-[120px]">
+            <FileText className="w-6 h-6 text-primary mb-2" />
+            <div className="text-2xl font-bold text-primary">{stats.totalPosts}</div>
+            <div className="text-sm text-muted-foreground text-center">Posts</div>
+          </div>
           
-          <Card className="bg-card border-border hover:shadow-md transition-shadow">
-            <CardContent className="p-6 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <TrendingUp className="w-8 h-8 text-green-500" />
-              </div>
-              <div className="text-3xl font-bold text-green-500 mb-1">{stats.totalUpvotes}</div>
-              <div className="text-sm text-muted-foreground">Total Upvotes</div>
-            </CardContent>
-          </Card>
+          <div className="flex flex-col items-center p-4 bg-card border border-border rounded-lg stats-card min-w-[120px]">
+            <TrendingUp className="w-6 h-6 text-green-500 mb-2" />
+            <div className="text-2xl font-bold text-green-500">{stats.totalUpvotes}</div>
+            <div className="text-sm text-muted-foreground text-center">Upvotes</div>
+          </div>
           
-          <Card className="bg-card border-border hover:shadow-md transition-shadow">
-            <CardContent className="p-6 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <TrendingDown className="w-8 h-8 text-red-500" />
-              </div>
-              <div className="text-3xl font-bold text-red-500 mb-1">{stats.totalDownvotes}</div>
-              <div className="text-sm text-muted-foreground">Total Downvotes</div>
-            </CardContent>
-          </Card>
+          <div className="flex flex-col items-center p-4 bg-card border border-border rounded-lg stats-card min-w-[120px]">
+            <TrendingDown className="w-6 h-6 text-red-500 mb-2" />
+            <div className="text-2xl font-bold text-red-500">{stats.totalDownvotes}</div>
+            <div className="text-sm text-muted-foreground text-center">Downvotes</div>
+          </div>
         </div>
 
         {/* User Posts */}
-        <Card className="bg-card border-border">
+        <Card className="stats-card">
           <CardHeader>
             <CardTitle className="text-foreground flex items-center space-x-2">
               <User className="w-5 h-5" />

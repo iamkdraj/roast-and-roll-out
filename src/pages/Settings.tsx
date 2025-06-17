@@ -12,55 +12,33 @@ const Settings = () => {
   const { theme, toggleTheme } = useTheme();
   const [showNSFW, setShowNSFW] = useState(localStorage.getItem('showNSFW') === 'true');
   const [notifications, setNotifications] = useState(true);
-  const [selectedTheme, setSelectedTheme] = useState(localStorage.getItem('appTheme') || 'default');
-
-  const themes = [
-    { id: 'default', name: 'Default', icon: '🎨', colors: 'bg-gray-900 border-orange-500' },
-    { id: 'retro', name: 'Retro', icon: '📺', colors: 'bg-purple-900 border-pink-500' },
-    { id: 'futuristic', name: 'Futuristic', icon: '🚀', colors: 'bg-blue-900 border-cyan-400' },
-    { id: 'nature', name: 'Nature', icon: '🌿', colors: 'bg-green-900 border-green-400' },
-    { id: 'cyberpunk', name: 'Cyberpunk', icon: '🤖', colors: 'bg-black border-lime-400' },
-    { id: 'minimalist', name: 'Minimalist', icon: '⚪', colors: 'bg-slate-100 border-slate-400' },
-    { id: 'steampunk', name: 'Steampunk', icon: '⚙️', colors: 'bg-amber-900 border-amber-600' },
-    { id: 'vaporwave', name: 'Vaporwave', icon: '🌸', colors: 'bg-pink-900 border-purple-400' },
-    { id: 'anime', name: 'Anime', icon: '🌸', colors: 'bg-rose-900 border-rose-400' },
-    { id: 'space', name: 'Space', icon: '🌌', colors: 'bg-indigo-900 border-purple-500' },
-    { id: 'underwater', name: 'Underwater', icon: '🌊', colors: 'bg-teal-900 border-blue-400' },
-  ];
 
   const handleNSFWToggle = (value: boolean) => {
     setShowNSFW(value);
     localStorage.setItem('showNSFW', value.toString());
   };
 
-  const handleThemeSelect = (themeId: string) => {
-    setSelectedTheme(themeId);
-    localStorage.setItem('appTheme', themeId);
-    document.documentElement.setAttribute('data-theme', themeId);
-  };
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-sm border-b border-border">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center relative">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate("/profile")}
-              className="text-primary"
+              className="absolute left-0 text-primary p-2"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-5 h-5" />
             </Button>
             <h1 className="text-xl font-bold text-primary">Settings</h1>
-            <div className="w-10"></div>
           </div>
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-6 space-y-6">
         {/* Appearance Settings */}
-        <Card className="bg-card border-border">
+        <Card className="stats-card">
           <CardHeader>
             <CardTitle className="text-primary flex items-center space-x-2">
               <Palette className="w-5 h-5" />
@@ -78,33 +56,11 @@ const Settings = () => {
                 onCheckedChange={toggleTheme}
               />
             </div>
-
-            <div>
-              <h3 className="font-medium text-foreground mb-4">App Theme</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {themes.map((themeOption) => (
-                  <div
-                    key={themeOption.id}
-                    className={`p-3 rounded-lg border-2 cursor-pointer transition-all hover:scale-105 ${
-                      selectedTheme === themeOption.id
-                        ? themeOption.colors
-                        : 'bg-muted border-border hover:border-primary'
-                    }`}
-                    onClick={() => handleThemeSelect(themeOption.id)}
-                  >
-                    <div className="text-center">
-                      <div className="text-2xl mb-2">{themeOption.icon}</div>
-                      <div className="text-sm font-medium text-foreground">{themeOption.name}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </CardContent>
         </Card>
 
         {/* Content Settings */}
-        <Card className="bg-card border-border">
+        <Card className="stats-card">
           <CardHeader>
             <CardTitle className="text-primary flex items-center space-x-2">
               <Shield className="w-5 h-5" />
@@ -126,7 +82,7 @@ const Settings = () => {
         </Card>
 
         {/* Notification Settings */}
-        <Card className="bg-card border-border">
+        <Card className="stats-card">
           <CardHeader>
             <CardTitle className="text-primary flex items-center space-x-2">
               <Bell className="w-5 h-5" />
@@ -148,7 +104,7 @@ const Settings = () => {
         </Card>
 
         {/* Language Settings */}
-        <Card className="bg-card border-border">
+        <Card className="stats-card">
           <CardHeader>
             <CardTitle className="text-primary flex items-center space-x-2">
               <Globe className="w-5 h-5" />
