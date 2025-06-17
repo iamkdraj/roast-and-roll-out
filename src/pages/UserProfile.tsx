@@ -1,13 +1,13 @@
+
 import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, MessageSquare, ThumbsUp, Settings } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Calendar, MessageSquare, ThumbsUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PostCard } from "@/components/PostCard";
 import { UserNav } from "@/components/UserNav";
 import { getRandomAvatarColor, getAvatarInitials } from "@/utils/avatarUtils";
-import { useAuth } from "@/hooks/useAuth";
 import { usePosts } from "@/hooks/usePosts";
 
 interface UserProfile {
@@ -18,27 +18,29 @@ interface UserProfile {
   created_at: string;
 }
 
-const Profile = () => {
-  const { user } = useAuth();
+const UserProfile = () => {
+  const { userId } = useParams();
   const navigate = useNavigate();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalPosts: 0, totalUpvotes: 0 });
-  const { vote, savePost, reportPost, deletePost } = usePosts();
+  const { vote, savePost, reportPost } = usePosts();
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (!user) return;
+      if (!userId) return;
 
       try {
         // Fetch user profile
         const { data: profileData } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', user.id)
+          .eq('id', userId)
           .single();
 
         if (profileData) {
+          setProfile(profileData);
 
           // Fetch user's posts
           const { data: postsData } = await supabase
@@ -49,7 +51,7 @@ const Profile = () => {
                 tags(name, emoji, is_sensitive)
               )
             `)
-            .eq('user_id', user.id)
+            .eq('user_id', userId)
             .eq('status', 'visible')
             .order('created_at', { ascending: false });
 
@@ -95,18 +97,7 @@ const Profile = () => {
     };
 
     fetchUserProfile();
-  }, [user]);
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Please log in to view your profile</h2>
-          <Button onClick={() => navigate("/auth")}>Go to Login</Button>
-        </div>
-      </div>
-    );
-  }
+  }, [userId]);
 
   if (loading) {
     return (
@@ -114,6 +105,17 @@ const Profile = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto"></div>
           <p className="mt-4 text-gray-400">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">User not found</h2>
+          <Button onClick={() => navigate("/")}>Go back home</Button>
         </div>
       </div>
     );
@@ -129,24 +131,12 @@ const Profile = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate("/")}
-                className="md:hidden"
               >
                 <ArrowLeft className="w-4 h-4" />
               </Button>
-              <h1 className="text-2xl font-bold text-orange-500">My Profile</h1>
+              <h1 className="text-2xl font-bold text-orange-500">Profile</h1>
             </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate("/settings")}
-                className="border-gray-600 text-gray-300 hover:bg-gray-800"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Settings
-              </Button>
-              <UserNav />
-            </div>
+            <UserNav />
           </div>
         </div>
       </header>
@@ -158,21 +148,24 @@ const Profile = () => {
             <Card className="bg-gray-900 border-gray-800">
               <CardContent className="p-6">
                 <div className="text-center">
-                  {user.user_metadata?.avatar_url ? (
+                  {profile.avatar_url ? (
                     <img
-                      src={user.user_metadata.avatar_url}
-                      alt={user.user_metadata.username}
+                      src={profile.avatar_url}
+                      alt={profile.username}
                       className="w-24 h-24 rounded-full mx-auto mb-4"
                     />
                   ) : (
-                    <div className={`w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center text-white font-bold text-2xl ${getRandomAvatarColor(user.user_metadata?.username as string)}`}>
-                      {getAvatarInitials(user.user_metadata?.username as string)}
+                    <div className={`w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center text-white font-bold text-2xl ${getRandomAvatarColor(profile.username)}`}>
+                      {getAvatarInitials(profile.username)}
                     </div>
                   )}
-                  <h2 className="text-2xl font-bold text-white mb-2">{user.user_metadata?.username}</h2>
+                  <h2 className="text-2xl font-bold text-white mb-2">{profile.username}</h2>
+                  {profile.bio && (
+                    <p className="text-gray-400 mb-4">{profile.bio}</p>
+                  )}
                   <div className="flex items-center justify-center text-sm text-gray-500 mb-4">
                     <Calendar className="w-4 h-4 mr-1" />
-                    Joined {new Date(user.created_at).toLocaleDateString()}
+                    Joined {new Date(profile.created_at).toLocaleDateString()}
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4 text-center">
@@ -200,7 +193,7 @@ const Profile = () => {
           <div className="lg:col-span-2">
             <Card className="bg-gray-900 border-gray-800">
               <CardHeader>
-                <CardTitle className="text-orange-500">Posts by {user.user_metadata?.username}</CardTitle>
+                <CardTitle className="text-orange-500">Posts by {profile.username}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -211,14 +204,14 @@ const Profile = () => {
                       onVote={vote}
                       onSave={savePost}
                       onReport={reportPost}
-                      onDelete={deletePost}
+                      onDelete={() => {}}
                       showNSFW={true}
                     />
                   ))}
                   
                   {userPosts.length === 0 && (
                     <div className="text-center py-8 text-gray-400">
-                      No posts yet from you.
+                      No posts yet from this user.
                     </div>
                   )}
                 </div>
@@ -231,4 +224,4 @@ const Profile = () => {
   );
 };
 
-export default Profile;
+export default UserProfile;

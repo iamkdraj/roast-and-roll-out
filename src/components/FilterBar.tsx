@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tag } from "@/hooks/useTags";
-import { Filter, X } from "lucide-react";
+import { Filter, X, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -31,6 +31,10 @@ export const FilterBar = ({ tags, selectedTags, onTagChange, sortBy, onSortChang
 
   const hasActiveFilters = selectedTags.length > 0 || sortBy !== "newest";
 
+  // Separate language tags from content tags
+  const languageTags = tags.filter(tag => ['Hindi', 'Hinglish', 'English'].includes(tag.name));
+  const contentTags = tags.filter(tag => !['Hindi', 'Hinglish', 'English'].includes(tag.name));
+
   return (
     <div className="sticky top-16 z-40 bg-gray-950/95 backdrop-blur-sm border-b border-gray-800 py-2">
       <div className="container mx-auto px-4">
@@ -41,10 +45,11 @@ export const FilterBar = ({ tags, selectedTags, onTagChange, sortBy, onSortChang
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-orange-500 hover:text-orange-400"
+              className="text-orange-500 hover:text-orange-400 flex items-center space-x-1"
             >
-              <Filter className="w-4 h-4 mr-2" />
-              Filter
+              <Filter className="w-4 h-4" />
+              <span>Filters</span>
+              <ChevronDown className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
               {hasActiveFilters && (
                 <span className="ml-1 w-2 h-2 bg-orange-500 rounded-full"></span>
               )}
@@ -62,7 +67,7 @@ export const FilterBar = ({ tags, selectedTags, onTagChange, sortBy, onSortChang
                       className="bg-orange-600/20 text-orange-400 border-orange-600/30 text-xs px-2 py-0.5"
                       title={tag.name}
                     >
-                      {tag.emoji}
+                      {tag.emoji} {tag.name}
                     </Badge>
                   ) : null;
                 })}
@@ -73,7 +78,7 @@ export const FilterBar = ({ tags, selectedTags, onTagChange, sortBy, onSortChang
             )}
           </div>
 
-          {/* Quick sort */}
+          {/* Quick sort and clear */}
           <div className="flex items-center space-x-2">
             <Select value={sortBy} onValueChange={onSortChange}>
               <SelectTrigger className="w-32 h-8 bg-gray-800 border-gray-700 text-white text-xs">
@@ -104,10 +109,34 @@ export const FilterBar = ({ tags, selectedTags, onTagChange, sortBy, onSortChang
         {isExpanded && (
           <div className="mt-4 p-4 bg-gray-900/50 rounded-lg border border-gray-800">
             <div className="space-y-4">
+              {/* Language Filters */}
               <div>
-                <label className="text-sm font-medium text-gray-300 mb-2 block">Tags</label>
+                <label className="text-sm font-medium text-gray-300 mb-2 block">Language</label>
                 <div className="flex flex-wrap gap-2">
-                  {tags.map((tag) => (
+                  {languageTags.map((tag) => (
+                    <Badge
+                      key={tag.id}
+                      variant={selectedTags.includes(tag.name) ? "default" : "outline"}
+                      className={`cursor-pointer transition-all text-sm group relative ${
+                        selectedTags.includes(tag.name)
+                          ? "bg-orange-600 text-white border-orange-600"
+                          : "bg-gray-800 text-gray-300 border-gray-600 hover:border-orange-500"
+                      }`}
+                      onClick={() => handleTagToggle(tag.name)}
+                      title={tag.name}
+                    >
+                      <span className="mr-1">{tag.emoji}</span>
+                      <span className="text-xs">{tag.name}</span>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Content Tags */}
+              <div>
+                <label className="text-sm font-medium text-gray-300 mb-2 block">Content Tags</label>
+                <div className="flex flex-wrap gap-2">
+                  {contentTags.map((tag) => (
                     <Badge
                       key={tag.id}
                       variant={selectedTags.includes(tag.name) ? "default" : "outline"}

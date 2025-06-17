@@ -10,6 +10,9 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import SavedPosts from "./pages/SavedPosts";
 import Profile from "./pages/Profile";
+import UserProfile from "./pages/UserProfile";
+import Leaderboard from "./pages/Leaderboard";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +30,9 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/saved" element={<SavedPosts />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/user/:userId" element={<UserProfile />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

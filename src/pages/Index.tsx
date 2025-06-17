@@ -6,7 +6,7 @@ import { PostCard } from "@/components/PostCard";
 import { CreatePost } from "@/components/CreatePost";
 import { FilterBar } from "@/components/FilterBar";
 import { UserNav } from "@/components/UserNav";
-import { Plus, Home, Search, Bookmark, User } from "lucide-react";
+import { Plus, Home, Trophy, Bookmark, User } from "lucide-react";
 import { usePosts } from "@/hooks/usePosts";
 import { useTags } from "@/hooks/useTags";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,10 +21,15 @@ const Index = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showCreatePost, setShowCreatePost] = useState(false);
-  const [showNSFW, setShowNSFW] = useState(false);
+  const [showNSFW, setShowNSFW] = useState(localStorage.getItem('showNSFW') === 'true');
 
   useEffect(() => {
     let filtered = [...posts];
+
+    // Filter by NSFW setting
+    if (!showNSFW) {
+      filtered = filtered.filter(post => !post.isNSFW);
+    }
 
     if (selectedTags.length > 0) {
       filtered = filtered.filter(post => 
@@ -48,11 +53,25 @@ const Index = () => {
     }
 
     setFilteredPosts(filtered);
-  }, [posts, selectedTags, sortBy]);
+  }, [posts, selectedTags, sortBy, showNSFW]);
+
+  // Update NSFW setting from localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setShowNSFW(localStorage.getItem('showNSFW') === 'true');
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const handleCreatePost = async (content: string, tagNames: string[], isAnonymous: boolean) => {
     await createPost(content, tagNames, isAnonymous);
     setShowCreatePost(false);
+  };
+
+  const handleUsernameClick = (userId: string) => {
+    navigate(`/user/${userId}`);
   };
 
   if (loading) {
@@ -99,53 +118,34 @@ const Index = () => {
       />
 
       <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-4">
-                <h3 className="font-semibold mb-4 text-orange-500">NSFW Content</h3>
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showNSFW}
-                    onChange={(e) => setShowNSFW(e.target.checked)}
-                    className="rounded border-gray-600 text-orange-500 focus:ring-orange-500"
-                  />
-                  <span className="text-sm text-gray-300">Show NSFW posts</span>
-                </label>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Main Feed */}
-          <div className="lg:col-span-3">
-            <div className="space-y-4">
-              {filteredPosts.map((post) => (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  onVote={vote}
-                  onSave={savePost}
-                  onReport={reportPost}
-                  onDelete={deletePost}
-                  showNSFW={showNSFW}
-                />
-              ))}
-              
-              {filteredPosts.length === 0 && !loading && (
-                <Card className="bg-gray-900 border-gray-800">
-                  <CardContent className="p-8 text-center">
-                    <p className="text-gray-400">
-                      {posts.length === 0 
-                        ? "No posts yet. Be the first to drop a roast! 🔥" 
-                        : "No posts match your filters. Try adjusting your selection!"
-                      }
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+        {/* Main Feed */}
+        <div className="max-w-4xl mx-auto">
+          <div className="space-y-4">
+            {filteredPosts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onVote={vote}
+                onSave={savePost}
+                onReport={reportPost}
+                onDelete={deletePost}
+                showNSFW={showNSFW}
+                onUsernameClick={handleUsernameClick}
+              />
+            ))}
+            
+            {filteredPosts.length === 0 && !loading && (
+              <Card className="bg-gray-900 border-gray-800">
+                <CardContent className="p-8 text-center">
+                  <p className="text-gray-400">
+                    {posts.length === 0 
+                      ? "No posts yet. Be the first to drop a roast! 🔥" 
+                      : "No posts match your filters. Try adjusting your selection!"
+                    }
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
@@ -169,9 +169,13 @@ const Index = () => {
             <Home className="w-5 h-5" />
             <span className="text-xs">Home</span>
           </Button>
-          <Button variant="ghost" className="flex flex-col items-center space-y-1 text-gray-400 hover:text-orange-500">
-            <Search className="w-5 h-5" />
-            <span className="text-xs">Search</span>
+          <Button 
+            variant="ghost" 
+            className="flex flex-col items-center space-y-1 text-gray-400 hover:text-orange-500"
+            onClick={() => navigate("/leaderboard")}
+          >
+            <Trophy className="w-5 h-5" />
+            <span className="text-xs">Leaderboard</span>
           </Button>
           <Button
             onClick={() => setShowCreatePost(true)}

@@ -125,6 +125,13 @@ export const usePosts = () => {
     }
 
     try {
+      // First check if the user owns this post
+      const postToDelete = posts.find(p => p.id === postId);
+      if (!postToDelete || postToDelete.user_id !== user.id) {
+        toast.error("You can only delete your own posts");
+        return;
+      }
+
       const { error } = await supabase
         .from('posts')
         .update({ status: 'deleted' })
@@ -133,7 +140,8 @@ export const usePosts = () => {
 
       if (error) throw error;
 
-      await fetchPosts();
+      // Remove the post from local state immediately
+      setPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
       toast.success("Post deleted successfully");
     } catch (error) {
       console.error('Error deleting post:', error);
