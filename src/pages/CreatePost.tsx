@@ -33,8 +33,9 @@ const CreatePost = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
 
-  const primaryTags = tags.filter(tag => ['ROAST', 'JOKE', 'INSULT'].includes(tag.name));
-  const otherTags = tags.filter(tag => !['ROAST', 'JOKE', 'INSULT'].includes(tag.name));
+  // Always show these tags
+  const primaryTags = tags.filter(tag => ['Roast', 'Joke', 'Pun', 'Insult'].includes(tag.name));
+  const otherTags = tags.filter(tag => !['Roast', 'Joke', 'Pun', 'Insult'].includes(tag.name));
 
   const handleTagToggle = (tagId: string) => {
     setSelectedTags(prev => 
@@ -44,11 +45,29 @@ const CreatePost = () => {
     );
   };
 
+  const getAnonymousPostCount = () => {
+    const anonymousPostsKey = 'anonymous_posts_' + new Date().toDateString();
+    const todaysPosts = JSON.parse(localStorage.getItem(anonymousPostsKey) || '[]');
+    return todaysPosts.length;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!title.trim()) {
       toast({ title: "Error", description: "Please enter a title", variant: "destructive" });
+      return;
+    }
+
+    // Check if content has actual text
+    const hasContent = content.content.some((node: any) => 
+      node.content && node.content.some((textNode: any) => 
+        textNode.text && textNode.text.trim().length > 0
+      )
+    );
+
+    if (!hasContent) {
+      toast({ title: "Error", description: "Please enter some content", variant: "destructive" });
       return;
     }
 
@@ -61,6 +80,15 @@ const CreatePost = () => {
       return;
     }
 
+    if (!user && isAnonymous && getAnonymousPostCount() >= 2) {
+      toast({ 
+        title: "Error", 
+        description: "You've reached the daily limit of 2 anonymous posts", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -68,7 +96,7 @@ const CreatePost = () => {
         title: title.trim(),
         content,
         tags: selectedTags,
-        isAnonymous
+        isAnonymous: !user || isAnonymous
       });
 
       toast({ title: "Success", description: "Your post has been created!" });
@@ -86,7 +114,7 @@ const CreatePost = () => {
   };
 
   return (
-    <Layout>
+    <Layout customTitle="Create Post" showBackButton>
       <div className="container mx-auto px-4 py-6">
         <motion.form 
           onSubmit={handleSubmit} 
@@ -129,25 +157,35 @@ const CreatePost = () => {
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 {primaryTags.map((tag) => (
-                  <TagPill
+                  <motion.div
                     key={tag.id}
-                    tag={tag}
-                    isSelected={selectedTags.includes(tag.id)}
-                    onClick={() => handleTagToggle(tag.id)}
-                  />
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <TagPill
+                      tag={tag}
+                      isSelected={selectedTags.includes(tag.id)}
+                      onClick={() => handleTagToggle(tag.id)}
+                    />
+                  </motion.div>
                 ))}
               </div>
               
               {otherTags.length > 0 && (
                 <div className="space-y-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAllTags(!showAllTags)}
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    {showAllTags ? "Show Less" : "Show More Tags"}
-                  </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAllTags(!showAllTags)}
+                    >
+                      {showAllTags ? "Show Less" : "Show More Tags"}
+                    </Button>
+                  </motion.div>
                   
                   {showAllTags && (
                     <motion.div 
@@ -157,12 +195,17 @@ const CreatePost = () => {
                       exit={{ height: 0, opacity: 0 }}
                     >
                       {otherTags.map((tag) => (
-                        <TagPill
+                        <motion.div
                           key={tag.id}
-                          tag={tag}
-                          isSelected={selectedTags.includes(tag.id)}
-                          onClick={() => handleTagToggle(tag.id)}
-                        />
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <TagPill
+                            tag={tag}
+                            isSelected={selectedTags.includes(tag.id)}
+                            onClick={() => handleTagToggle(tag.id)}
+                          />
+                        </motion.div>
                       ))}
                     </motion.div>
                   )}
@@ -171,23 +214,31 @@ const CreatePost = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="anonymous"
-                  checked={isAnonymous}
-                  onCheckedChange={setIsAnonymous}
-                />
-                <Label htmlFor="anonymous">Post anonymously</Label>
-                {!user && (
-                  <span className="text-sm text-muted-foreground">
-                    (No login required - 2 posts per 24h)
-                  </span>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          {user && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="anonymous"
+                    checked={isAnonymous}
+                    onCheckedChange={setIsAnonymous}
+                  />
+                  <Label htmlFor="anonymous">Post anonymously</Label>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {!user && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center text-sm text-muted-foreground">
+                  <p>You can post anonymously without logging in</p>
+                  <p>Limit: {getAnonymousPostCount()}/2 posts per day</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <motion.div
             whileHover={{ scale: 1.02 }}

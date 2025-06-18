@@ -42,10 +42,10 @@ export const BottomBar = () => {
         stiffness: 300,
         damping: 30
       }}
-      className="fixed bottom-0 left-0 right-0 bg-card/60 backdrop-blur-md border-t border-border/40 z-50"
+      className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border/60 z-20 dark:bg-gray-800/95 dark:border-gray-700/60"
     >
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-12">
+        <div className="flex items-center justify-between h-10">
           <Link
             to="/"
             className={`flex items-center justify-center flex-1 ${
@@ -58,7 +58,7 @@ export const BottomBar = () => {
               whileTap="tap"
               className="p-2"
             >
-              <Home className="w-5 h-5" />
+              <Home className={`w-5 h-5 ${isActive("/") ? "text-primary" : ""}`} />
             </motion.div>
           </Link>
 
@@ -74,7 +74,7 @@ export const BottomBar = () => {
               whileTap="tap"
               className="p-2"
             >
-              <Trophy className="w-5 h-5" />
+              <Trophy className={`w-5 h-5 ${isActive("/leaderboard") ? "text-primary" : ""}`} />
             </motion.div>
           </Link>
 
@@ -99,7 +99,7 @@ export const BottomBar = () => {
             >
               <Button
                 asChild
-                className="w-10 h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 -mt-3 shadow-lg hover:shadow-xl transition-all duration-300"
+                className="w-10 h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 -mt-2 shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <Link to="/create">
                   <Plus className="w-5 h-5" />
@@ -120,7 +120,7 @@ export const BottomBar = () => {
               whileTap="tap"
               className="p-2"
             >
-              <Bookmark className="w-5 h-5" />
+              <Bookmark className={`w-5 h-5 ${isActive("/saved") ? "text-primary" : ""}`} />
             </motion.div>
           </Link>
 
@@ -136,11 +136,11 @@ export const BottomBar = () => {
               whileTap="tap"
               className="p-2"
             >
-              <User className="w-5 h-5" />
+              <User className={`w-5 h-5 ${isActive("/profile") || isActive("/auth") ? "text-primary" : ""}`} />
             </motion.div>
           </Link>
         </div>
       </div>
     </motion.div>
   );
-}; 
+};

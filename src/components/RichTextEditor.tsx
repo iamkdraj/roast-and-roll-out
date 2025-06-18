@@ -1,5 +1,5 @@
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Bold, Italic, Underline, Type, List, AlignLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -11,6 +11,11 @@ interface RichTextEditorProps {
 
 export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
+  const [activeFormats, setActiveFormats] = useState({
+    bold: false,
+    italic: false,
+    underline: false
+  });
 
   useEffect(() => {
     if (editorRef.current && content) {
@@ -25,6 +30,20 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
       const htmlContent = editorRef.current.innerHTML;
       const jsonContent = htmlToJson(htmlContent);
       onChange(jsonContent);
+      updateActiveFormats();
+    }
+  };
+
+  const updateActiveFormats = () => {
+    if (editorRef.current) {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        setActiveFormats({
+          bold: document.queryCommandState('bold'),
+          italic: document.queryCommandState('italic'),
+          underline: document.queryCommandState('underline')
+        });
+      }
     }
   };
 
@@ -74,46 +93,54 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
     const content: any[] = [];
     const paragraphs = tempDiv.querySelectorAll('p');
     
-    paragraphs.forEach(p => {
-      const textContent: any[] = [];
-      const walker = document.createTreeWalker(
-        p,
-        NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
-        null
-      );
-      
-      let node;
-      let currentText = '';
-      let currentMarks: any[] = [];
-      
-      while (node = walker.nextNode()) {
-        if (node.nodeType === Node.TEXT_NODE) {
-          currentText += node.textContent || '';
-        } else if (node.nodeType === Node.ELEMENT_NODE) {
-          const element = node as Element;
-          if (element.tagName === 'STRONG' || element.tagName === 'B') {
-            currentMarks.push({ type: 'bold' });
-          } else if (element.tagName === 'EM' || element.tagName === 'I') {
-            currentMarks.push({ type: 'italic' });
-          } else if (element.tagName === 'U') {
-            currentMarks.push({ type: 'underline' });
-          }
-        }
-      }
-      
-      if (currentText) {
-        textContent.push({
-          type: 'text',
-          text: currentText,
-          marks: currentMarks.length > 0 ? currentMarks : undefined
-        });
-      }
-      
+    if (paragraphs.length === 0 && tempDiv.textContent) {
+      // If no paragraphs, treat as single paragraph
       content.push({
         type: 'paragraph',
-        content: textContent
+        content: [{ type: 'text', text: tempDiv.textContent }]
       });
-    });
+    } else {
+      paragraphs.forEach(p => {
+        const textContent: any[] = [];
+        const walker = document.createTreeWalker(
+          p,
+          NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
+          null
+        );
+        
+        let node;
+        let currentText = '';
+        let currentMarks: any[] = [];
+        
+        while (node = walker.nextNode()) {
+          if (node.nodeType === Node.TEXT_NODE) {
+            currentText += node.textContent || '';
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            const element = node as Element;
+            if (element.tagName === 'STRONG' || element.tagName === 'B') {
+              currentMarks.push({ type: 'bold' });
+            } else if (element.tagName === 'EM' || element.tagName === 'I') {
+              currentMarks.push({ type: 'italic' });
+            } else if (element.tagName === 'U') {
+              currentMarks.push({ type: 'underline' });
+            }
+          }
+        }
+        
+        if (currentText) {
+          textContent.push({
+            type: 'text',
+            text: currentText,
+            marks: currentMarks.length > 0 ? currentMarks : undefined
+          });
+        }
+        
+        content.push({
+          type: 'paragraph',
+          content: textContent
+        });
+      });
+    }
     
     return {
       type: 'doc',
@@ -131,8 +158,9 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
         contentEditable
         className="min-h-[200px] p-4 focus:outline-none"
         onInput={handleInput}
+        onKeyUp={updateActiveFormats}
+        onMouseUp={updateActiveFormats}
         style={{ minHeight: '200px' }}
-        data-placeholder="Write your roast here..."
       />
       
       <div className="border-t border-border p-2 bg-muted/50">
@@ -140,7 +168,7 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
               type="button"
-              variant="ghost"
+              variant={activeFormats.bold ? "default" : "ghost"}
               size="sm"
               onClick={() => formatText('bold')}
               className="h-8 w-8 p-0"
@@ -152,7 +180,7 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
               type="button"
-              variant="ghost"
+              variant={activeFormats.italic ? "default" : "ghost"}
               size="sm"
               onClick={() => formatText('italic')}
               className="h-8 w-8 p-0"
@@ -164,7 +192,7 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
               type="button"
-              variant="ghost"
+              variant={activeFormats.underline ? "default" : "ghost"}
               size="sm"
               onClick={() => formatText('underline')}
               className="h-8 w-8 p-0"

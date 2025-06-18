@@ -12,10 +12,10 @@ export const Layout = ({ children, customTitle, showBackButton }: LayoutProps) =
   return (
     <div className="min-h-screen bg-background text-foreground">
       <TopBar customTitle={customTitle} showBackButton={showBackButton} />
-      <div className="pt-14 pb-14">
+      <div className="pt-12 pb-12">
         {children}
       </div>
       <BottomBar />
     </div>
   );
-}; 
+};

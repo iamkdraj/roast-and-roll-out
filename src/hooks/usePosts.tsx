@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
@@ -6,7 +7,7 @@ import { toast } from "sonner";
 export interface Post {
   id: string;
   title: string;
-  content: any;
+  content: string;
   tags: Array<{ emoji: string; name: string }>;
   upvotes: number;
   downvotes: number;
@@ -63,7 +64,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
                 }
                 return '';
               }).join('') || '';
-              return `<p>${textContent}</p>`;
+              return textContent ? `<p>${textContent}</p>` : '';
             }
             return '';
           })
@@ -178,21 +179,11 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
   }) => {
     // Allow anonymous posting without login for limited posts
     if (!user && postData.isAnonymous) {
-      // Check anonymous post limit using IP hash
-      const ipHash = 'anonymous_' + Date.now();
-      const twentyFourHoursAgo = new Date();
-      twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
-
-      const { data: recentAnonymousPosts, error: countError } = await supabase
-        .from('posts')
-        .select('id')
-        .eq('is_anonymous', true)
-        .is('user_id', null)
-        .gte('created_at', twentyFourHoursAgo.toISOString());
-
-      if (countError) throw countError;
-
-      if (recentAnonymousPosts && recentAnonymousPosts.length >= 2) {
+      // Check anonymous post limit using a simple localStorage approach
+      const anonymousPostsKey = 'anonymous_posts_' + new Date().toDateString();
+      const todaysPosts = JSON.parse(localStorage.getItem(anonymousPostsKey) || '[]');
+      
+      if (todaysPosts.length >= 2) {
         throw new Error("Anonymous posting limit reached. You can post 2 anonymous posts every 24 hours.");
       }
 
@@ -210,6 +201,10 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
         .single();
 
       if (error) throw error;
+
+      // Update localStorage
+      todaysPosts.push(Date.now());
+      localStorage.setItem(anonymousPostsKey, JSON.stringify(todaysPosts));
 
       // Add tags
       if (postData.tags.length > 0) {
@@ -362,7 +357,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
     }
   };
 
-  const editPost = async (postId: string, title: string, newContent: string) => {
+  const editPost = async (postId: string, content: string) => {
     if (!user) {
       toast.error("Please log in to edit posts");
       return;
@@ -380,8 +375,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
       const { error: updateError } = await supabase
         .from('posts')
         .update({
-          title: title,
-          content: newContent,
+          content: content,
           updated_at: new Date().toISOString()
         })
         .eq('id', postId)
@@ -395,8 +389,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
           p.id === postId
             ? {
                 ...p,
-                title: title,
-                content: convertJsonToHtml(newContent)
+                content: convertJsonToHtml(content)
               }
             : p
         )
