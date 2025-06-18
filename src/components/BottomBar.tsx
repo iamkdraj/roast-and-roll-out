@@ -45,7 +45,7 @@ export const BottomBar = () => {
       className="fixed bottom-0 left-0 right-0 bg-card/60 backdrop-blur-md border-t border-border/40 z-50"
     >
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-14">
+        <div className="flex items-center justify-between h-12">
           <Link
             to="/"
             className={`flex items-center justify-center flex-1 ${

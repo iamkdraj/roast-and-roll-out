@@ -6,6 +6,7 @@ import { usePosts } from "@/hooks/usePosts";
 import { useTags } from "@/hooks/useTags";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Layout } from "@/components/Layout";
 
 const Index = () => {
   const { data: posts, isLoading: loading, vote, savePost, reportPost, deletePost, editPost } = usePosts();
@@ -96,22 +97,24 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="text-center"
-        >
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading roasts...</p>
-        </motion.div>
-      </div>
+      <Layout>
+        <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="text-center"
+          >
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading roasts...</p>
+          </motion.div>
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <Layout>
       {/* Filter Bar */}
       <FilterBar
         tags={tags}
@@ -155,7 +158,7 @@ const Index = () => {
           ))}
         </motion.div>
       </main>
-    </div>
+    </Layout>
   );
 };
 

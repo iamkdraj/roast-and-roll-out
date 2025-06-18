@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
@@ -30,6 +29,52 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Helper function to convert JSON content to HTML
+  const convertJsonToHtml = (jsonContent: any): string => {
+    if (!jsonContent || typeof jsonContent !== 'object') {
+      return jsonContent?.toString() || "";
+    }
+
+    try {
+      if (jsonContent.content && Array.isArray(jsonContent.content)) {
+        return jsonContent.content
+          .map((node: any) => {
+            if (node.type === 'paragraph') {
+              const textContent = node.content?.map((textNode: any) => {
+                if (textNode.type === 'text') {
+                  let text = textNode.text || '';
+                  if (textNode.marks) {
+                    textNode.marks.forEach((mark: any) => {
+                      switch (mark.type) {
+                        case 'bold':
+                          text = `<strong>${text}</strong>`;
+                          break;
+                        case 'italic':
+                          text = `<em>${text}</em>`;
+                          break;
+                        case 'underline':
+                          text = `<u>${text}</u>`;
+                          break;
+                      }
+                    });
+                  }
+                  return text;
+                }
+                return '';
+              }).join('') || '';
+              return `<p>${textContent}</p>`;
+            }
+            return '';
+          })
+          .join('');
+      }
+    } catch (error) {
+      console.error('Error converting JSON to HTML:', error);
+    }
+
+    return jsonContent?.toString() || "";
+  };
 
   const fetchPosts = async () => {
     try {
@@ -88,30 +133,8 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
             username = profileData?.username || "Unknown";
           }
 
-          // Convert JSON content to text for display
-          let displayContent = "";
-          try {
-            if (typeof post.content === 'string') {
-              const contentObj = JSON.parse(post.content);
-              if (contentObj.content && Array.isArray(contentObj.content)) {
-                displayContent = contentObj.content
-                  .map((node: any) => {
-                    if (node.content && Array.isArray(node.content)) {
-                      return node.content
-                        .map((textNode: any) => textNode.text || '')
-                        .join('');
-                    }
-                    return '';
-                  })
-                  .join('\n');
-              }
-            } else {
-              displayContent = JSON.stringify(post.content);
-            }
-          } catch (error) {
-            console.error('Error parsing content:', error);
-            displayContent = post.content?.toString() || "";
-          }
+          // Convert JSON content to HTML for display
+          const displayContent = convertJsonToHtml(post.content);
 
           return {
             id: post.id,
@@ -147,43 +170,64 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
     fetchPosts();
   }, [user]);
 
-  const deletePost = async (postId: string) => {
-    if (!user) {
-      toast.error("Please log in to delete posts");
-      return;
-    }
-
-    try {
-      // First check if the user owns this post
-      const postToDelete = posts.find(p => p.id === postId);
-      if (!postToDelete || postToDelete.user_id !== user.id) {
-        toast.error("You can only delete your own posts");
-        return;
-      }
-
-      const { error } = await supabase
-        .from('posts')
-        .update({ status: 'deleted' })
-        .eq('id', postId)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      // Remove the post from local state immediately
-      setPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
-      toast.success("Post deleted successfully");
-    } catch (error) {
-      console.error('Error deleting post:', error);
-      toast.error('Failed to delete post');
-    }
-  };
-
   const createPost = async (postData: { 
     title: string;
     content: any;
     tags: string[];
     isAnonymous: boolean;
   }) => {
+    // Allow anonymous posting without login for limited posts
+    if (!user && postData.isAnonymous) {
+      // Check anonymous post limit using IP hash
+      const ipHash = 'anonymous_' + Date.now();
+      const twentyFourHoursAgo = new Date();
+      twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+      const { data: recentAnonymousPosts, error: countError } = await supabase
+        .from('posts')
+        .select('id')
+        .eq('is_anonymous', true)
+        .is('user_id', null)
+        .gte('created_at', twentyFourHoursAgo.toISOString());
+
+      if (countError) throw countError;
+
+      if (recentAnonymousPosts && recentAnonymousPosts.length >= 2) {
+        throw new Error("Anonymous posting limit reached. You can post 2 anonymous posts every 24 hours.");
+      }
+
+      // Create anonymous post
+      const { data, error } = await supabase
+        .from('posts')
+        .insert({
+          title: postData.title,
+          content: postData.content,
+          user_id: null,
+          is_anonymous: true,
+          status: 'visible'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Add tags
+      if (postData.tags.length > 0) {
+        const tagInserts = postData.tags.map(tagId => ({
+          post_id: data.id,
+          tag_id: tagId
+        }));
+
+        const { error: tagError } = await supabase
+          .from('post_tags')
+          .insert(tagInserts);
+
+        if (tagError) throw tagError;
+      }
+
+      return data;
+    }
+
     if (!user) throw new Error("Must be logged in to create posts");
 
     const { data, error } = await supabase
@@ -352,7 +396,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
             ? {
                 ...p,
                 title: title,
-                content: newContent
+                content: convertJsonToHtml(newContent)
               }
             : p
         )
@@ -363,6 +407,37 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
       console.error('Error editing post:', error);
       toast.error('Failed to edit post');
       throw error;
+    }
+  };
+
+  const deletePost = async (postId: string) => {
+    if (!user) {
+      toast.error("Please log in to delete posts");
+      return;
+    }
+
+    try {
+      // First check if the user owns this post
+      const postToDelete = posts.find(p => p.id === postId);
+      if (!postToDelete || postToDelete.user_id !== user.id) {
+        toast.error("You can only delete your own posts");
+        return;
+      }
+
+      const { error } = await supabase
+        .from('posts')
+        .update({ status: 'deleted' })
+        .eq('id', postId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Remove the post from local state immediately
+      setPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
+      toast.success("Post deleted successfully");
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      toast.error('Failed to delete post');
     }
   };
 

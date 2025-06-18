@@ -1,13 +1,14 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, TrendingUp, TrendingDown, FileText } from "lucide-react";
+import { User, TrendingUp, TrendingDown, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PostCard } from "@/components/PostCard";
 import { Post } from "@/hooks/usePosts";
+import { Layout } from "@/components/Layout";
+import { motion } from "framer-motion";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -110,51 +111,48 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
+      <Layout>
+        <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-sm border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-center relative">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/")}
-              className="absolute left-0 text-primary p-2"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <h1 className="text-xl font-bold text-primary">My Profile</h1>
-          </div>
-        </div>
-      </header>
-
+    <Layout>
       <div className="container mx-auto px-4 py-6 space-y-6">
         {/* Stats Cards in a Row */}
         <div className="flex gap-4 justify-center">
-          <div className="flex flex-col items-center p-4 bg-card border border-border rounded-lg stats-card min-w-[120px]">
+          <motion.div 
+            className="flex flex-col items-center p-4 bg-card border border-border rounded-lg stats-card min-w-[120px]"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
             <FileText className="w-6 h-6 text-primary mb-2" />
             <div className="text-2xl font-bold text-primary">{stats.totalPosts}</div>
             <div className="text-sm text-muted-foreground text-center">Posts</div>
-          </div>
+          </motion.div>
           
-          <div className="flex flex-col items-center p-4 bg-card border border-border rounded-lg stats-card min-w-[120px]">
+          <motion.div 
+            className="flex flex-col items-center p-4 bg-card border border-border rounded-lg stats-card min-w-[120px]"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
             <TrendingUp className="w-6 h-6 text-green-500 mb-2" />
             <div className="text-2xl font-bold text-green-500">{stats.totalUpvotes}</div>
             <div className="text-sm text-muted-foreground text-center">Upvotes</div>
-          </div>
+          </motion.div>
           
-          <div className="flex flex-col items-center p-4 bg-card border border-border rounded-lg stats-card min-w-[120px]">
+          <motion.div 
+            className="flex flex-col items-center p-4 bg-card border border-border rounded-lg stats-card min-w-[120px]"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
             <TrendingDown className="w-6 h-6 text-red-500 mb-2" />
             <div className="text-2xl font-bold text-red-500">{stats.totalDownvotes}</div>
             <div className="text-sm text-muted-foreground text-center">Downvotes</div>
-          </div>
+          </motion.div>
         </div>
 
         {/* User Posts */}
@@ -173,24 +171,30 @@ const Profile = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {userPosts.map((post) => (
-                  <PostCard
+                {userPosts.map((post, index) => (
+                  <motion.div
                     key={post.id}
-                    post={post}
-                    onVote={() => {}}
-                    onSave={() => {}}
-                    onReport={() => {}}
-                    onDelete={() => {}}
-                    onEdit={handleEdit}
-                    showNSFW={true}
-                  />
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <PostCard
+                      post={post}
+                      onVote={() => {}}
+                      onSave={() => {}}
+                      onReport={() => {}}
+                      onDelete={() => {}}
+                      onEdit={handleEdit}
+                      showNSFW={true}
+                    />
+                  </motion.div>
                 ))}
               </div>
             )}
           </CardContent>
         </Card>
       </div>
-    </div>
+    </Layout>
   );
 };
 

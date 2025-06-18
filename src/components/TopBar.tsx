@@ -1,16 +1,24 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, Settings } from "lucide-react";
+import { Menu, Settings, ArrowLeft } from "lucide-react";
 import { UserSidebar } from "./UserSidebar";
 import { SettingsSidebar } from "./SettingsSidebar";
 import { motion } from "framer-motion";
+import { useLocation, useNavigate } from "react-router-dom";
 
-export const TopBar = () => {
+interface TopBarProps {
+  customTitle?: string;
+  showBackButton?: boolean;
+}
+
+export const TopBar = ({ customTitle, showBackButton }: TopBarProps) => {
   const [isUserSidebarOpen, setIsUserSidebarOpen] = useState(false);
   const [isSettingsSidebarOpen, setIsSettingsSidebarOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,6 +39,22 @@ export const TopBar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
+  const getPageTitle = () => {
+    if (customTitle) return customTitle;
+    
+    switch (location.pathname) {
+      case "/leaderboard": return "Leaderboard";
+      case "/profile": return "My Profile";
+      case "/saved": return "Saved Posts";
+      case "/create": return "Create Post";
+      default: return "Roastr";
+    }
+  };
+
+  const shouldShowBackButton = () => {
+    return showBackButton || location.pathname !== "/";
+  };
+
   return (
     <>
       <motion.header
@@ -40,40 +64,61 @@ export const TopBar = () => {
         className="fixed top-0 left-0 right-0 z-40 bg-card/80 backdrop-blur-sm border-b border-border"
       >
         <div className="container mx-auto px-4 py-2">
-          <div className="flex items-center justify-between h-12">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsUserSidebarOpen(true)}
-                className="h-9 w-9"
+          <div className="flex items-center justify-between h-10">
+            <div className="flex items-center space-x-2">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <Menu className="w-5 h-5" />
-              </Button>
-            </motion.div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsUserSidebarOpen(true)}
+                  className="h-8 w-8"
+                >
+                  <Menu className="w-4 h-4" />
+                </Button>
+              </motion.div>
+
+              {shouldShowBackButton() && (
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => navigate("/")}
+                    className="h-8 w-8"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </Button>
+                </motion.div>
+              )}
+            </div>
 
             <motion.h1
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-xl font-bold text-primary"
+              className="text-lg font-bold text-primary"
             >
-              Roastr
+              {getPageTitle()}
             </motion.h1>
 
             <motion.div
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.05, rotate: 180 }}
               whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.3 }}
             >
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsSettingsSidebarOpen(true)}
-                className="h-9 w-9"
+                className="h-8 w-8"
               >
-                <Settings className="w-5 h-5" />
+                <Settings className="w-4 h-4" />
               </Button>
             </motion.div>
           </div>

@@ -2,12 +2,12 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PostCard } from "@/components/PostCard";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Post } from "@/hooks/usePosts";
+import { Layout } from "@/components/Layout";
+import { motion } from "framer-motion";
 
 export default function SavedPosts() {
   const [savedPosts, setSavedPosts] = useState<Post[]>([]);
@@ -102,31 +102,16 @@ export default function SavedPosts() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
+      <Layout>
+        <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-sm border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/")}
-              className="text-primary"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <h1 className="text-xl font-bold text-primary">Saved Posts</h1>
-            <div className="w-10"></div>
-          </div>
-        </div>
-      </header>
-
+    <Layout>
       <div className="container mx-auto px-4 py-6">
         {savedPosts.length === 0 ? (
           <Card className="bg-card border-border">
@@ -136,21 +121,27 @@ export default function SavedPosts() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {savedPosts.map((post) => (
-              <PostCard
+            {savedPosts.map((post, index) => (
+              <motion.div
                 key={post.id}
-                post={post}
-                onVote={() => {}}
-                onSave={() => {}}
-                onReport={() => {}}
-                onDelete={() => {}}
-                onEdit={handleEdit}
-                showNSFW={true}
-              />
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <PostCard
+                  post={post}
+                  onVote={() => {}}
+                  onSave={() => {}}
+                  onReport={() => {}}
+                  onDelete={() => {}}
+                  onEdit={handleEdit}
+                  showNSFW={true}
+                />
+              </motion.div>
             ))}
           </div>
         )}
       </div>
-    </div>
+    </Layout>
   );
 }

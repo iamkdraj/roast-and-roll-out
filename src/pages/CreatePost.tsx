@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import usePosts from "@/hooks/usePosts";
@@ -14,6 +14,7 @@ import { RichTextEditor } from "@/components/RichTextEditor";
 import { TagPill } from "@/components/TagPill";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import { Layout } from "@/components/Layout";
 
 const CreatePost = () => {
   const navigate = useNavigate();
@@ -51,8 +52,12 @@ const CreatePost = () => {
       return;
     }
 
-    if (!user) {
-      navigate("/auth");
+    if (!user && !isAnonymous) {
+      toast({ 
+        title: "Error", 
+        description: "Please log in or post anonymously", 
+        variant: "destructive" 
+      });
       return;
     }
 
@@ -68,11 +73,11 @@ const CreatePost = () => {
 
       toast({ title: "Success", description: "Your post has been created!" });
       navigate("/");
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating post:', error);
       toast({ 
         title: "Error", 
-        description: "Failed to create post. Please try again.", 
+        description: error.message || "Failed to create post. Please try again.", 
         variant: "destructive" 
       });
     } finally {
@@ -80,41 +85,8 @@ const CreatePost = () => {
     }
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <Card>
-          <CardContent className="p-8 text-center">
-            <p className="mb-4">Please log in to create a post</p>
-            <Button onClick={() => navigate("/auth")}>Log In</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="min-h-screen bg-background text-foreground"
-    >
-      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-sm border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-center relative">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/")}
-              className="absolute left-0 text-primary p-2"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <h1 className="text-xl font-bold text-primary">Create Post</h1>
-          </div>
-        </div>
-      </header>
-
+    <Layout>
       <div className="container mx-auto px-4 py-6">
         <motion.form 
           onSubmit={handleSubmit} 
@@ -208,6 +180,11 @@ const CreatePost = () => {
                   onCheckedChange={setIsAnonymous}
                 />
                 <Label htmlFor="anonymous">Post anonymously</Label>
+                {!user && (
+                  <span className="text-sm text-muted-foreground">
+                    (No login required - 2 posts per 24h)
+                  </span>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -234,7 +211,7 @@ const CreatePost = () => {
           </motion.div>
         </motion.form>
       </div>
-    </motion.div>
+    </Layout>
   );
 };
 

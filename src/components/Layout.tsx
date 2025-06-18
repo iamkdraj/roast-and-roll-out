@@ -4,13 +4,15 @@ import { TopBar } from "./TopBar";
 
 interface LayoutProps {
   children: React.ReactNode;
+  customTitle?: string;
+  showBackButton?: boolean;
 }
 
-export const Layout = ({ children }: LayoutProps) => {
+export const Layout = ({ children, customTitle, showBackButton }: LayoutProps) => {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <TopBar />
-      <div className="pt-16 pb-16">
+      <TopBar customTitle={customTitle} showBackButton={showBackButton} />
+      <div className="pt-14 pb-14">
         {children}
       </div>
       <BottomBar />

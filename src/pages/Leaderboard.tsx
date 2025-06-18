@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trophy, Medal, Award, ArrowLeft, Calendar } from "lucide-react";
+import { Trophy, Medal, Award, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { UserNav } from "@/components/UserNav";
+import { Layout } from "@/components/Layout";
+import { motion } from "framer-motion";
 
 interface LeaderboardUser {
   id: string;
@@ -149,37 +150,19 @@ const Leaderboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading leaderboard...</p>
+      <Layout>
+        <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading leaderboard...</p>
+          </div>
         </div>
-      </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-sm border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-center relative">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/")}
-              className="absolute left-0 md:hidden text-primary p-2"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <h1 className="text-2xl font-bold text-primary">Leaderboard</h1>
-            <div className="absolute right-0">
-              <UserNav />
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <Layout>
       <div className="container mx-auto px-4 py-6 space-y-6">
         {/* Timeframe Filter */}
         <Card className="bg-card border-border">
@@ -216,10 +199,15 @@ const Leaderboard = () => {
           <CardContent>
             <div className="space-y-3">
               {users.map((user, index) => (
-                <div
+                <motion.div
                   key={user.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
                   className="flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer border border-border/50"
                   onClick={() => navigate(`/user/${user.id}`)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <div className="flex items-center space-x-4">
                     {getRankIcon(index)}
@@ -234,7 +222,7 @@ const Leaderboard = () => {
                     <div className="text-xl font-bold text-primary">{user.score}</div>
                     <div className="text-xs text-muted-foreground">score</div>
                   </div>
-                </div>
+                </motion.div>
               ))}
               
               {users.length === 0 && (
@@ -249,7 +237,7 @@ const Leaderboard = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </Layout>
   );
 };
 
