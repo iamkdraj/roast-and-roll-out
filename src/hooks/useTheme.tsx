@@ -1,5 +1,6 @@
+
 import { createContext, useContext, ReactNode } from "react";
-import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from "next-themes";
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   return (
@@ -15,9 +16,5 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export const useTheme = () => {
-  const context = useContext(NextThemesProvider);
-  if (!context) {
-    throw new Error("useTheme must be used within ThemeProvider");
-  }
-  return context;
+  return useNextTheme();
 };

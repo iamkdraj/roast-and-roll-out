@@ -64,6 +64,7 @@ const Profile = () => {
 
           return {
             id: post.id,
+            title: post.title || 'Untitled',
             content: post.content,
             tags: post.post_tags.map((pt: any) => ({
               emoji: pt.tags.emoji,
@@ -174,6 +175,7 @@ const Profile = () => {
                     onSave={() => {}}
                     onReport={() => {}}
                     onDelete={() => {}}
+                    onEdit={() => {}}
                     showNSFW={true}
                   />
                 ))}

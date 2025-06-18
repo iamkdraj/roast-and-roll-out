@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PostCard } from "@/components/PostCard";
@@ -68,6 +67,7 @@ export default function SavedPosts() {
 
           return {
             id: post.id,
+            title: post.title || 'Untitled',
             content: post.content,
             tags: post.post_tags.map((pt: any) => ({
               emoji: pt.tags.emoji,
@@ -138,6 +138,7 @@ export default function SavedPosts() {
                 onSave={() => {}}
                 onReport={() => {}}
                 onDelete={() => {}}
+                onEdit={() => {}}
                 showNSFW={true}
               />
             ))}

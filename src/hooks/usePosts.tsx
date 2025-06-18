@@ -2,25 +2,22 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
+import { useQueryClient } from "react-query";
 
 export interface Post {
   id: string;
   title: string;
-  content: string;
-  tags: { emoji: string; name: string }[];
+  content: any;
+  tags: Array<{ emoji: string; name: string }>;
   upvotes: number;
   downvotes: number;
   username: string;
   isAnonymous: boolean;
   createdAt: string;
   isNSFW: boolean;
-  userVote?: "upvote" | "downvote" | null;
-  isSaved?: boolean;
-  user_id?: string;
-  editHistory?: {
-    content: string;
-    timestamp: string;
-  }[];
+  userVote: "upvote" | "downvote" | null;
+  isSaved: boolean;
+  user_id: string;
 }
 
 interface VoteCounts {
@@ -28,10 +25,12 @@ interface VoteCounts {
   downvotes: number;
 }
 
-export const usePosts = () => {
+export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: string[] = []) => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
 
   const fetchPosts = async () => {
     try {
@@ -180,45 +179,43 @@ export const usePosts = () => {
     }
   };
 
-  const createPost = async (title: string, content: string, tagNames: string[], isAnonymous: boolean = false) => {
-    try {
-      const { data: tags, error: tagsError } = await supabase
-        .from('tags')
-        .select('id, name')
-        .in('name', tagNames);
+  const createPost = async (postData: { 
+    title: string;
+    content: any;
+    tags: string[];
+    isAnonymous: boolean;
+  }) => {
+    if (!user) throw new Error("Must be logged in to create posts");
 
-      if (tagsError) throw tagsError;
+    const { data, error } = await supabase
+      .from('posts')
+      .insert({
+        title: postData.title,
+        content: postData.content,
+        user_id: user.id,
+        is_anonymous: postData.isAnonymous,
+        status: 'visible'
+      })
+      .select()
+      .single();
 
-      const { data: post, error: postError } = await supabase
-        .from('posts')
-        .insert({
-          title,
-          content: content, // Already JSON string from editor
-          user_id: isAnonymous ? null : user?.id,
-          is_anonymous: isAnonymous
-        })
-        .select()
-        .single();
+    if (error) throw error;
 
-      if (postError) throw postError;
-
-      const postTags = tags.map(tag => ({
-        post_id: post.id,
-        tag_id: tag.id
+    // Add tags
+    if (postData.tags.length > 0) {
+      const tagInserts = postData.tags.map(tagId => ({
+        post_id: data.id,
+        tag_id: tagId
       }));
 
       const { error: tagError } = await supabase
         .from('post_tags')
-        .insert(postTags);
+        .insert(tagInserts);
 
       if (tagError) throw tagError;
-
-      await fetchPosts();
-      toast.success("Post created successfully! 🔥");
-    } catch (error) {
-      console.error('Error creating post:', error);
-      toast.error('Failed to create post');
     }
+
+    return data;
   };
 
   const vote = async (postId: string, voteType: "upvote" | "downvote") => {
@@ -389,14 +386,17 @@ export const usePosts = () => {
   };
 
   return {
-    posts,
-    loading,
-    createPost,
+    data: posts,
+    isLoading: loading,
+    error: null,
     vote,
-    savePost,
-    reportPost,
+    createPost,
     deletePost,
-    editPost,
-    refreshPosts: fetchPosts
+    savePost,
+    unsavePost,
+    reportPost,
+    refetch: fetchPosts
   };
 };
+
+export default usePosts;
