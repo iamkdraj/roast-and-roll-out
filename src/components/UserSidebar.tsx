@@ -65,9 +65,10 @@ export const UserSidebar = ({ isOpen, onClose }: UserSidebarProps) => {
           let totalDownvotes = 0;
           
           voteResults.forEach(result => {
-            if (result.data) {
-              totalUpvotes += result.data.upvotes || 0;
-              totalDownvotes += result.data.downvotes || 0;
+            if (result.data && typeof result.data === 'object') {
+              const voteData = result.data as { upvotes?: number; downvotes?: number };
+              totalUpvotes += voteData.upvotes || 0;
+              totalDownvotes += voteData.downvotes || 0;
             }
           });
           

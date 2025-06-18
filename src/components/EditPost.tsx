@@ -1,11 +1,10 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { X, Save, History } from "lucide-react";
+import { X, Save } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Post } from "@/hooks/usePosts";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,7 +19,6 @@ export const EditPost = ({ post, onClose, onSave }: EditPostProps) => {
   const [title, setTitle] = useState(post.title);
   const [content, setContent] = useState(post.content);
   const [isSaving, setIsSaving] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -56,47 +54,16 @@ export const EditPost = ({ post, onClose, onSave }: EditPostProps) => {
       <Card className="w-full max-w-2xl">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Edit Post</CardTitle>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowHistory(!showHistory)}
-            >
-              <History className="w-4 h-4 mr-2" />
-              History
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+          >
+            <X className="w-4 h-4" />
+          </Button>
         </CardHeader>
         
         <CardContent className="space-y-6">
-          {/* Version History */}
-          <Collapsible open={showHistory} onOpenChange={setShowHistory}>
-            <CollapsibleContent>
-              <div className="space-y-2 mb-4">
-                {post.editHistory?.map((version, index) => (
-                  <div key={index} className="p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(version.timestamp).toLocaleString()}
-                      </span>
-                      <Badge variant="outline">
-                        Version {post.editHistory.length - index}
-                      </Badge>
-                    </div>
-                    <p className="text-sm whitespace-pre-wrap">{version.content}</p>
-                  </div>
-                ))}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-
           {/* Title Input */}
           <div>
             <Label htmlFor="edit-title" className="text-foreground">Title</Label>
@@ -144,4 +111,4 @@ export const EditPost = ({ post, onClose, onSave }: EditPostProps) => {
       </Card>
     </div>
   );
-}; 
+};

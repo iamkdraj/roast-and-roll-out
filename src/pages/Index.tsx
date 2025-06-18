@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const Index = () => {
-  const { posts, loading, vote, savePost, reportPost, deletePost } = usePosts();
+  const { data: posts, isLoading: loading, vote, savePost, reportPost, deletePost, editPost } = usePosts();
   const { tags } = useTags();
   const navigate = useNavigate();
   const [filteredPosts, setFilteredPosts] = useState(posts);
@@ -90,9 +90,8 @@ const Index = () => {
     );
   };
 
-  const handleEdit = async (postId: string, content: string) => {
-    // Implement edit functionality
-    return Promise.resolve();
+  const handleEdit = async (postId: string, title: string, content: string) => {
+    await editPost(postId, title, content);
   };
 
   if (loading) {

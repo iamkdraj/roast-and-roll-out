@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -102,6 +103,11 @@ const Profile = () => {
     }
   };
 
+  const handleEdit = async (postId: string, title: string, content: string): Promise<void> => {
+    // This will be handled by the edit modal
+    return Promise.resolve();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
@@ -175,7 +181,7 @@ const Profile = () => {
                     onSave={() => {}}
                     onReport={() => {}}
                     onDelete={() => {}}
-                    onEdit={() => {}}
+                    onEdit={handleEdit}
                     showNSFW={true}
                   />
                 ))}

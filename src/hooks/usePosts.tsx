@@ -1,8 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
-import { useQueryClient } from "react-query";
 
 export interface Post {
   id: string;
@@ -18,6 +18,7 @@ export interface Post {
   userVote: "upvote" | "downvote" | null;
   isSaved: boolean;
   user_id: string;
+  editHistory?: Array<{ content: any; timestamp: string }>;
 }
 
 interface VoteCounts {
@@ -27,8 +28,6 @@ interface VoteCounts {
 
 export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: string[] = []) => {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -319,7 +318,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
     }
   };
 
-  const editPost = async (postId: string, newContent: string) => {
+  const editPost = async (postId: string, title: string, newContent: string) => {
     if (!user) {
       toast.error("Please log in to edit posts");
       return;
@@ -333,30 +332,12 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
         return;
       }
 
-      // Get current post data
-      const { data: currentPost, error: fetchError } = await supabase
-        .from('posts')
-        .select('content, edit_history')
-        .eq('id', postId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Prepare edit history
-      const editHistory = [
-        ...(currentPost.edit_history || []),
-        {
-          content: currentPost.content,
-          timestamp: new Date().toISOString()
-        }
-      ];
-
-      // Update post with new content and edit history
+      // Update post with new content
       const { error: updateError } = await supabase
         .from('posts')
         .update({
+          title: title,
           content: newContent,
-          edit_history: editHistory,
           updated_at: new Date().toISOString()
         })
         .eq('id', postId)
@@ -370,8 +351,8 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
           p.id === postId
             ? {
                 ...p,
-                content: newContent,
-                editHistory: editHistory
+                title: title,
+                content: newContent
               }
             : p
         )
@@ -393,8 +374,8 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
     createPost,
     deletePost,
     savePost,
-    unsavePost,
     reportPost,
+    editPost,
     refetch: fetchPosts
   };
 };

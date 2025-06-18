@@ -19,7 +19,7 @@ const CreatePost = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { createPost } = usePosts();
-  const { data: tags = [] } = useTags();
+  const { tags } = useTags();
   const { toast } = useToast();
   
   const [title, setTitle] = useState("");

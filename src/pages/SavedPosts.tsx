@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PostCard } from "@/components/PostCard";
@@ -94,6 +95,11 @@ export default function SavedPosts() {
     }
   };
 
+  const handleEdit = async (postId: string, title: string, content: string): Promise<void> => {
+    // This will be handled by the edit modal
+    return Promise.resolve();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
@@ -138,7 +144,7 @@ export default function SavedPosts() {
                 onSave={() => {}}
                 onReport={() => {}}
                 onDelete={() => {}}
-                onEdit={() => {}}
+                onEdit={handleEdit}
                 showNSFW={true}
               />
             ))}
