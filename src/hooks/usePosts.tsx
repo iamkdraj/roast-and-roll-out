@@ -90,10 +90,35 @@ export const usePosts = () => {
             username = profileData?.username || "Unknown";
           }
 
+          // Convert JSON content to text for display
+          let displayContent = "";
+          try {
+            if (typeof post.content === 'string') {
+              const contentObj = JSON.parse(post.content);
+              if (contentObj.content && Array.isArray(contentObj.content)) {
+                displayContent = contentObj.content
+                  .map((node: any) => {
+                    if (node.content && Array.isArray(node.content)) {
+                      return node.content
+                        .map((textNode: any) => textNode.text || '')
+                        .join('');
+                    }
+                    return '';
+                  })
+                  .join('\n');
+              }
+            } else {
+              displayContent = JSON.stringify(post.content);
+            }
+          } catch (error) {
+            console.error('Error parsing content:', error);
+            displayContent = post.content?.toString() || "";
+          }
+
           return {
             id: post.id,
-            title: post.title,
-            content: post.content,
+            title: post.title || "Untitled",
+            content: displayContent,
             tags: post.post_tags.map((pt: any) => ({
               emoji: pt.tags.emoji,
               name: pt.tags.name
@@ -168,7 +193,7 @@ export const usePosts = () => {
         .from('posts')
         .insert({
           title,
-          content,
+          content: content, // Already JSON string from editor
           user_id: isAnonymous ? null : user?.id,
           is_anonymous: isAnonymous
         })

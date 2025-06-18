@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import { Home, Trophy, Bookmark, User, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,7 +45,7 @@ export const BottomBar = () => {
       className="fixed bottom-0 left-0 right-0 bg-card/60 backdrop-blur-md border-t border-border/40 z-50"
     >
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-12">
+        <div className="flex items-center justify-between h-14">
           <Link
             to="/"
             className={`flex items-center justify-center flex-1 ${
@@ -55,9 +56,9 @@ export const BottomBar = () => {
               variants={iconVariants}
               whileHover="hover"
               whileTap="tap"
-              className="p-1.5"
+              className="p-2"
             >
-              <Home className="w-6 h-6" />
+              <Home className="w-5 h-5" />
             </motion.div>
           </Link>
 
@@ -71,9 +72,9 @@ export const BottomBar = () => {
               variants={iconVariants}
               whileHover="hover"
               whileTap="tap"
-              className="p-1.5"
+              className="p-2"
             >
-              <Trophy className="w-6 h-6" />
+              <Trophy className="w-5 h-5" />
             </motion.div>
           </Link>
 
@@ -98,10 +99,10 @@ export const BottomBar = () => {
             >
               <Button
                 asChild
-                className="w-11 h-11 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 -mt-5 shadow-lg hover:shadow-xl transition-all duration-300"
+                className="w-10 h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 -mt-3 shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <Link to="/create">
-                  <Plus className="w-6 h-6" />
+                  <Plus className="w-5 h-5" />
                 </Link>
               </Button>
             </motion.div>
@@ -117,9 +118,9 @@ export const BottomBar = () => {
               variants={iconVariants}
               whileHover="hover"
               whileTap="tap"
-              className="p-1.5"
+              className="p-2"
             >
-              <Bookmark className="w-6 h-6" />
+              <Bookmark className="w-5 h-5" />
             </motion.div>
           </Link>
 
@@ -133,9 +134,9 @@ export const BottomBar = () => {
               variants={iconVariants}
               whileHover="hover"
               whileTap="tap"
-              className="p-1.5"
+              className="p-2"
             >
-              <User className="w-6 h-6" />
+              <User className="w-5 h-5" />
             </motion.div>
           </Link>
         </div>

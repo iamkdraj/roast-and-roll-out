@@ -1,25 +1,19 @@
+
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { PostCard } from "@/components/PostCard";
-import { CreatePost } from "@/components/CreatePost";
 import { FilterBar } from "@/components/FilterBar";
-import { UserNav } from "@/components/UserNav";
-import { Plus, Home, Trophy, Bookmark, User } from "lucide-react";
 import { usePosts } from "@/hooks/usePosts";
 import { useTags } from "@/hooks/useTags";
-import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 const Index = () => {
-  const { posts, loading, createPost, vote, savePost, reportPost, deletePost } = usePosts();
+  const { posts, loading, vote, savePost, reportPost, deletePost } = usePosts();
   const { tags } = useTags();
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [filteredPosts, setFilteredPosts] = useState(posts);
   const [sortBy, setSortBy] = useState("newest");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [showCreatePost, setShowCreatePost] = useState(false);
   const [showNSFW, setShowNSFW] = useState(localStorage.getItem('showNSFW') === 'true');
 
   useEffect(() => {
@@ -84,11 +78,6 @@ const Index = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const handleCreatePost = async (title: string, content: string, tagNames: string[], isAnonymous: boolean) => {
-    await createPost(title, content, tagNames, isAnonymous);
-    setShowCreatePost(false);
-  };
-
   const handleUsernameClick = (userId: string) => {
     navigate(`/user/${userId}`);
   };
@@ -109,37 +98,21 @@ const Index = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="text-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="text-center"
+        >
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4 text-muted-foreground">Loading roasts...</p>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-sm border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-primary">Roastr</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button
-                onClick={() => setShowCreatePost(true)}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground hidden md:flex"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Post
-              </Button>
-              <UserNav />
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Filter Bar */}
       <FilterBar
         tags={tags}
@@ -151,31 +124,38 @@ const Index = () => {
       />
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="space-y-6">
-          {filteredPosts.map((post) => (
-            <PostCard
+      <main className="container mx-auto px-4 py-6">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="space-y-6"
+        >
+          {filteredPosts.map((post, index) => (
+            <motion.div
               key={post.id}
-              post={post}
-              onVote={vote}
-              onSave={savePost}
-              onReport={reportPost}
-              onDelete={deletePost}
-              onEdit={handleEdit}
-              showNSFW={showNSFW}
-              onUsernameClick={handleUsernameClick}
-            />
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ 
+                duration: 0.5, 
+                delay: index * 0.1,
+                ease: "easeOut"
+              }}
+            >
+              <PostCard
+                post={post}
+                onVote={vote}
+                onSave={savePost}
+                onReport={reportPost}
+                onDelete={deletePost}
+                onEdit={handleEdit}
+                showNSFW={showNSFW}
+                onUsernameClick={handleUsernameClick}
+              />
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </main>
-
-      {/* Create Post Modal */}
-      {showCreatePost && (
-        <CreatePost
-          onClose={() => setShowCreatePost(false)}
-          onSubmit={handleCreatePost}
-        />
-      )}
     </div>
   );
 };

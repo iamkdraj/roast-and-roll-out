@@ -41,29 +41,32 @@ export type Database = {
       }
       posts: {
         Row: {
-          content: string
+          content: Json
           created_at: string | null
           id: string
           is_anonymous: boolean | null
           status: string | null
+          title: string
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
-          content: string
+          content: Json
           created_at?: string | null
           id?: string
           is_anonymous?: boolean | null
           status?: string | null
+          title: string
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
-          content?: string
+          content?: Json
           created_at?: string | null
           id?: string
           is_anonymous?: boolean | null
           status?: string | null
+          title?: string
           updated_at?: string | null
           user_id?: string | null
         }

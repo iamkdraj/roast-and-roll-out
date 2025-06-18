@@ -1,4 +1,6 @@
+
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 interface TagPillProps {
   tag: {
@@ -13,8 +15,10 @@ interface TagPillProps {
 
 export const TagPill = ({ tag, isSelected, onClick, className }: TagPillProps) => {
   return (
-    <button
+    <motion.button
       onClick={onClick}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
       className={cn(
         "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium transition-colors",
         isSelected
@@ -23,8 +27,15 @@ export const TagPill = ({ tag, isSelected, onClick, className }: TagPillProps) =
         className
       )}
     >
-      <span className="mr-1">{tag.emoji}</span>
+      <motion.span 
+        className="mr-1"
+        initial={{ rotate: 0 }}
+        whileHover={{ rotate: 12 }}
+        transition={{ duration: 0.2 }}
+      >
+        {tag.emoji}
+      </motion.span>
       {tag.name}
-    </button>
+    </motion.button>
   );
 }; 
