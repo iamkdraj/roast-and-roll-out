@@ -42,10 +42,14 @@ export const BottomBar = () => {
         stiffness: 300,
         damping: 30
       }}
-      className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border/60 z-20 dark:bg-gray-800/95 dark:border-gray-700/60"
+      className="fixed bottom-0 left-0 right-0 z-10 bg-background/95 dark:bg-background/95 backdrop-blur-md border-t border-border/60 dark:border-border/60"
+      style={{ 
+        backgroundColor: 'rgba(var(--background), 0.95)',
+        backdropFilter: 'blur(12px)'
+      }}
     >
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-10">
+        <div className="flex items-center justify-between h-12">
           <Link
             to="/"
             className={`flex items-center justify-center flex-1 ${

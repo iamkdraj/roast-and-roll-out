@@ -91,8 +91,8 @@ const Index = () => {
     );
   };
 
-  const handleEdit = async (postId: string, title: string, content: string) => {
-    await editPost(postId, title, content);
+  const handleEdit = async (postId: string, content: string) => {
+    await editPost(postId, content);
   };
 
   if (loading) {

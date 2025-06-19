@@ -61,9 +61,13 @@ export const TopBar = ({ customTitle, showBackButton }: TopBarProps) => {
         initial={{ y: 0 }}
         animate={{ y: isVisible ? 0 : -100 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="fixed top-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-b border-border/60 dark:bg-gray-800/95 dark:border-gray-700/60"
+        className="fixed top-0 left-0 right-0 z-40 bg-background/95 dark:bg-background/95 backdrop-blur-md border-b border-border/60 dark:border-border/60"
+        style={{ 
+          backgroundColor: 'rgba(var(--background), 0.95)',
+          backdropFilter: 'blur(12px)'
+        }}
       >
-        <div className="container mx-auto px-4 py-1.5">
+        <div className="container mx-auto px-4 py-2">
           <div className="flex items-center justify-between h-8">
             <div className="flex items-center space-x-2">
               <motion.div
@@ -74,53 +78,55 @@ export const TopBar = ({ customTitle, showBackButton }: TopBarProps) => {
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsUserSidebarOpen(true)}
-                  className="h-7 w-7"
+                  className="h-8 w-8"
                 >
                   <Menu className="w-4 h-4" />
                 </Button>
               </motion.div>
+            </div>
 
+            <motion.h1
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-xl font-bold text-primary flex-1 text-center"
+            >
+              {getPageTitle()}
+            </motion.h1>
+
+            <div className="flex items-center space-x-2">
               {shouldShowBackButton() && (
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                 >
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => navigate("/")}
-                    className="h-7 w-7"
+                    className="h-8 w-8"
                   >
                     <ArrowLeft className="w-4 h-4" />
                   </Button>
                 </motion.div>
               )}
-            </div>
-
-            <motion.h1
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-xl font-bold text-primary"
-            >
-              {getPageTitle()}
-            </motion.h1>
-
-            <motion.div
-              whileHover={{ scale: 1.05, rotate: 90 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsSettingsSidebarOpen(true)}
-                className="h-7 w-7"
+              
+              <motion.div
+                whileHover={{ scale: 1.05, rotate: 90 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.3 }}
               >
-                <Settings className="w-4 h-4" />
-              </Button>
-            </motion.div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsSettingsSidebarOpen(true)}
+                  className="h-8 w-8"
+                >
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </motion.div>
+            </div>
           </div>
         </div>
       </motion.header>

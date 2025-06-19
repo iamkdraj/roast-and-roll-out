@@ -25,6 +25,51 @@ const UserProfile = () => {
     }
   }, [userId]);
 
+  const convertJsonToHtml = (jsonContent: any): string => {
+    if (!jsonContent || typeof jsonContent !== 'object') {
+      return jsonContent?.toString() || "";
+    }
+
+    try {
+      if (jsonContent.content && Array.isArray(jsonContent.content)) {
+        return jsonContent.content
+          .map((node: any) => {
+            if (node.type === 'paragraph') {
+              const textContent = node.content?.map((textNode: any) => {
+                if (textNode.type === 'text') {
+                  let text = textNode.text || '';
+                  if (textNode.marks) {
+                    textNode.marks.forEach((mark: any) => {
+                      switch (mark.type) {
+                        case 'bold':
+                          text = `<strong>${text}</strong>`;
+                          break;
+                        case 'italic':
+                          text = `<em>${text}</em>`;
+                          break;
+                        case 'underline':
+                          text = `<u>${text}</u>`;
+                          break;
+                      }
+                    });
+                  }
+                  return text;
+                }
+                return '';
+              }).join('') || '';
+              return textContent ? `<p>${textContent}</p>` : '';
+            }
+            return '';
+          })
+          .join('');
+      }
+    } catch (error) {
+      console.error('Error converting JSON to HTML:', error);
+    }
+
+    return jsonContent?.toString() || "";
+  };
+
   const fetchUserData = async () => {
     if (!userId) return;
 
@@ -66,7 +111,7 @@ const UserProfile = () => {
           return {
             id: post.id,
             title: post.title || 'Untitled',
-            content: post.content,
+            content: convertJsonToHtml(post.content),
             tags: post.post_tags.map((pt: any) => ({
               emoji: pt.tags.emoji,
               name: pt.tags.name
@@ -103,7 +148,7 @@ const UserProfile = () => {
     }
   };
 
-  const handleEdit = async (postId: string, title: string, content: string): Promise<void> => {
+  const handleEdit = async (postId: string, content: string): Promise<void> => {
     // This will be handled by the edit modal
     return Promise.resolve();
   };

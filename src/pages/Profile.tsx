@@ -2,12 +2,18 @@
 import { useState, useEffect } from "react";
 import { PostCard } from "@/components/PostCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { Layout } from "@/components/Layout";
 import { useToast } from "@/hooks/use-toast";
 import { Post } from "@/hooks/usePosts";
+import { getRandomAvatarColor, getAvatarInitials } from "@/utils/avatarUtils";
+import { Edit, FileText, TrendingUp, TrendingDown } from "lucide-react";
 
 const Profile = () => {
   const { user } = useAuth();
@@ -15,11 +21,14 @@ const Profile = () => {
   const [userPosts, setUserPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalPosts: 0, totalUpvotes: 0, totalDownvotes: 0 });
+  const [isEditing, setIsEditing] = useState(false);
+  const [profile, setProfile] = useState({ username: '', bio: '' });
 
   useEffect(() => {
     if (user) {
       fetchUserPosts();
       fetchUserStats();
+      fetchProfile();
     } else {
       setLoading(false);
     }
@@ -68,6 +77,20 @@ const Profile = () => {
     }
 
     return jsonContent?.toString() || "";
+  };
+
+  const fetchProfile = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('username, bio')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (data) {
+      setProfile({ username: data.username || '', bio: data.bio || '' });
+    }
   };
 
   const fetchUserPosts = async () => {
@@ -129,7 +152,7 @@ const Profile = () => {
             isAnonymous: post.is_anonymous,
             createdAt: post.created_at,
             isNSFW: post.post_tags.some((pt: any) => pt.tags.is_sensitive),
-            userVote: voteData?.vote_type || null,
+            userVote: (voteData?.vote_type as "upvote" | "downvote") || null,
             isSaved: !!savedData,
             user_id: post.user_id
           };
@@ -188,28 +211,45 @@ const Profile = () => {
     }
   };
 
+  const handleUpdateProfile = async () => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          username: profile.username,
+          bio: profile.bio
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast({ title: "Success", description: "Profile updated successfully" });
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({ title: "Error", description: "Failed to update profile", variant: "destructive" });
+    }
+  };
+
   const handleVote = async (postId: string, voteType: "upvote" | "downvote") => {
-    // Implementation would go here
     toast({ title: "Info", description: "Voting functionality would be implemented here" });
   };
 
   const handleSave = async (postId: string) => {
-    // Implementation would go here
     toast({ title: "Info", description: "Save functionality would be implemented here" });
   };
 
   const handleReport = async (postId: string) => {
-    // Implementation would go here
     toast({ title: "Info", description: "Report functionality would be implemented here" });
   };
 
   const handleDelete = async (postId: string) => {
-    // Implementation would go here
     toast({ title: "Info", description: "Delete functionality would be implemented here" });
   };
 
   const handleEdit = async (postId: string, content: string) => {
-    // Implementation would go here
     toast({ title: "Info", description: "Edit functionality would be implemented here" });
   };
 
@@ -231,66 +271,104 @@ const Profile = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Loading your posts...</p>
+            <p className="mt-4 text-muted-foreground">Loading your profile...</p>
           </div>
         </div>
       </Layout>
     );
   }
 
+  const avatarColor = getRandomAvatarColor(profile.username);
+
   return (
     <Layout customTitle="My Profile" showBackButton>
-      <div className="container mx-auto px-4 py-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalPosts}</div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Upvotes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-500">{stats.totalUpvotes}</div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Downvotes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-red-500">{stats.totalDownvotes}</div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
+      <div className="container mx-auto px-4 py-6 max-w-4xl">
+        {/* Profile Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-card border border-border rounded-lg p-6 mb-6"
+        >
+          <div className="flex items-start gap-6">
+            <Avatar className="h-24 w-24">
+              <AvatarFallback className={`${avatarColor} text-white text-2xl font-bold`}>
+                {getAvatarInitials(profile.username)}
+              </AvatarFallback>
+            </Avatar>
+            
+            <div className="flex-1">
+              {isEditing ? (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="username">Username</Label>
+                    <Input
+                      id="username"
+                      value={profile.username}
+                      onChange={(e) => setProfile(prev => ({ ...prev, username: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio">Bio</Label>
+                    <Input
+                      id="bio"
+                      value={profile.bio}
+                      onChange={(e) => setProfile(prev => ({ ...prev, bio: e.target.value }))}
+                      placeholder="Tell us about yourself..."
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleUpdateProfile} size="sm">Save</Button>
+                    <Button onClick={() => setIsEditing(false)} variant="outline" size="sm">Cancel</Button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h1 className="text-2xl font-bold">{profile.username}</h1>
+                    <Button
+                      onClick={() => setIsEditing(true)}
+                      variant="ghost"
+                      size="sm"
+                      className="opacity-70 hover:opacity-100"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <p className="text-muted-foreground">{profile.bio || "No bio yet"}</p>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Stats */}
+          <div className="flex gap-6 mt-6 pt-6 border-t border-border">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" />
+              <div>
+                <div className="text-xl font-bold">{stats.totalPosts}</div>
+                <div className="text-sm text-muted-foreground">Posts</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-green-500" />
+              <div>
+                <div className="text-xl font-bold text-green-500">{stats.totalUpvotes}</div>
+                <div className="text-sm text-muted-foreground">Upvotes</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <TrendingDown className="w-5 h-5 text-red-500" />
+              <div>
+                <div className="text-xl font-bold text-red-500">{stats.totalDownvotes}</div>
+                <div className="text-sm text-muted-foreground">Downvotes</div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Posts */}
         <div className="space-y-6">
+          <h2 className="text-xl font-semibold">Your Posts</h2>
           {userPosts.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">You haven't created any posts yet</p>

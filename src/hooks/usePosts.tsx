@@ -99,7 +99,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
 
           const voteCounts = (voteCountsData as unknown) as VoteCounts;
 
-          let userVote = null;
+          let userVote: "upvote" | "downvote" | null = null;
           if (user) {
             const { data: voteData } = await supabase
               .from('votes')
@@ -108,7 +108,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
               .eq('user_id', user.id)
               .maybeSingle();
             
-            userVote = voteData?.vote_type || null;
+            userVote = (voteData?.vote_type as "upvote" | "downvote") || null;
           }
 
           let isSaved = false;
