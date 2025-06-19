@@ -25,10 +25,8 @@ export const TopBar = ({ customTitle, showBackButton }: TopBarProps) => {
       const currentScrollY = window.scrollY;
       
       if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        // Scrolling down and past 100px
         setIsVisible(false);
       } else if (currentScrollY < lastScrollY) {
-        // Scrolling up
         setIsVisible(true);
       }
       
@@ -59,20 +57,22 @@ export const TopBar = ({ customTitle, showBackButton }: TopBarProps) => {
     <>
       <motion.header
         initial={{ y: 0 }}
-        animate={{ y: isVisible ? 0 : -100 }}
+        animate={{ y: isVisible ? 0 : -48 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="fixed top-0 left-0 right-0 z-40 bg-background/95 dark:bg-background/95 backdrop-blur-md border-b border-border/60 dark:border-border/60"
+        className="fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-b border-border"
         style={{ 
-          backgroundColor: 'rgba(var(--background), 0.95)',
-          backdropFilter: 'blur(12px)'
+          backgroundColor: 'hsl(var(--background) / 0.95)',
+          backdropFilter: 'blur(12px)',
+          height: '48px'
         }}
       >
-        <div className="container mx-auto px-4 py-2">
-          <div className="flex items-center justify-between h-8">
-            <div className="flex items-center space-x-2">
+        <div className="container mx-auto px-4 h-full">
+          <div className="flex items-center justify-between h-full">
+            <div className="flex items-center">
               <motion.div
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.05, rotate: 5 }}
                 whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 10 }}
               >
                 <Button
                   variant="ghost"
@@ -88,7 +88,7 @@ export const TopBar = ({ customTitle, showBackButton }: TopBarProps) => {
             <motion.h1
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-xl font-bold text-primary flex-1 text-center"
+              className="text-lg font-bold text-primary text-center flex-1"
             >
               {getPageTitle()}
             </motion.h1>
@@ -96,10 +96,11 @@ export const TopBar = ({ customTitle, showBackButton }: TopBarProps) => {
             <div className="flex items-center space-x-2">
               {shouldShowBackButton() && (
                 <motion.div
-                  whileHover={{ scale: 1.05 }}
+                  whileHover={{ scale: 1.05, x: -2 }}
                   whileTap={{ scale: 0.95 }}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
                 >
                   <Button
                     variant="ghost"
@@ -115,7 +116,7 @@ export const TopBar = ({ customTitle, showBackButton }: TopBarProps) => {
               <motion.div
                 whileHover={{ scale: 1.05, rotate: 90 }}
                 whileTap={{ scale: 0.95 }}
-                transition={{ duration: 0.3 }}
+                transition={{ type: "spring", stiffness: 400, damping: 10 }}
               >
                 <Button
                   variant="ghost"

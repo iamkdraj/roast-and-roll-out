@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
@@ -68,6 +67,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
             }
             return '';
           })
+          .filter(content => content) // Remove empty content
           .join('');
       }
     } catch (error) {

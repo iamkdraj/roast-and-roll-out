@@ -13,6 +13,7 @@ import { TagPill } from "@/components/TagPill";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { Layout } from "@/components/Layout";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 const CreatePost = () => {
   const navigate = useNavigate();
@@ -22,15 +23,20 @@ const CreatePost = () => {
   const { toast } = useToast();
   
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState({
+    type: 'doc',
+    content: [{
+      type: 'paragraph',
+      content: []
+    }]
+  });
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
 
-  // Always show these tags as requested
-  const primaryTags = tags.filter(tag => ['Roast', 'Joke', 'Pun', 'Insult'].includes(tag.name));
-  const otherTags = tags.filter(tag => !['Roast', 'Joke', 'Pun', 'Insult'].includes(tag.name));
+  const primaryTags = tags.filter(tag => ['Roast', 'Joke', 'Pun'].includes(tag.name));
+  const otherTags = tags.filter(tag => !['Roast', 'Joke', 'Pun'].includes(tag.name));
 
   const handleTagToggle = (tagId: string) => {
     setSelectedTags(prev => 
@@ -46,20 +52,6 @@ const CreatePost = () => {
     return todaysPosts.length;
   };
 
-  const convertToJson = (plainText: string) => {
-    // Convert plain text with basic formatting to JSON structure
-    return {
-      type: 'doc',
-      content: [{
-        type: 'paragraph',
-        content: [{
-          type: 'text',
-          text: plainText
-        }]
-      }]
-    };
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -68,7 +60,8 @@ const CreatePost = () => {
       return;
     }
 
-    if (!content.trim()) {
+    if (!content.content || content.content.length === 0 || 
+        (content.content.length === 1 && (!content.content[0].content || content.content[0].content.length === 0))) {
       toast({ title: "Error", description: "Please enter some content", variant: "destructive" });
       return;
     }
@@ -92,7 +85,7 @@ const CreatePost = () => {
     try {
       await createPost({
         title: title.trim(),
-        content: convertToJson(content.trim()),
+        content: content,
         tags: selectedTags,
         isAnonymous: !user || isAnonymous
       });
@@ -121,57 +114,45 @@ const CreatePost = () => {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
         >
-          {/* Title and Content in one card */}
-          <div className="relative border border-border rounded-lg p-6 bg-card">
-            {/* Title Input */}
+          <div className="relative border-2 border-border rounded-lg p-6 bg-card dark:bg-card/50">
             <div className="relative mb-6">
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Enter your post title..."
-                className="text-lg font-semibold border-0 px-0 focus-visible:ring-0 bg-transparent"
+                className="text-lg font-semibold border-2 border-border focus:border-primary bg-background"
                 maxLength={200}
               />
-              <Label className="absolute -top-3 left-3 px-2 bg-card text-sm font-medium text-muted-foreground">
+              <Label className="absolute -top-3 left-3 px-2 bg-card text-sm font-medium text-muted-foreground border border-border rounded">
                 Title
               </Label>
             </div>
 
-            {/* Content Input */}
             <div className="relative">
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="What's your roast? Drop your joke, insult, or roast here..."
-                className="w-full min-h-[120px] resize-none border-0 px-0 py-2 focus:outline-none bg-transparent text-base"
-                maxLength={2000}
-              />
-              <Label className="absolute -top-3 left-3 px-2 bg-card text-sm font-medium text-muted-foreground">
+              <div className="border-2 border-border rounded-lg bg-background focus-within:border-primary transition-colors">
+                <RichTextEditor
+                  content={content}
+                  onChange={setContent}
+                />
+              </div>
+              <Label className="absolute -top-3 left-3 px-2 bg-card text-sm font-medium text-muted-foreground border border-border rounded">
                 Body
               </Label>
-              
-              {/* Character counter */}
-              <div className="flex justify-end mt-2">
-                <span className={`text-sm ${content.length > 1800 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                  {content.length}/2000
-                </span>
-              </div>
             </div>
           </div>
 
-          {/* Tags Section */}
-          <div className="relative border border-border rounded-lg p-4 bg-card">
-            <Label className="absolute -top-3 left-3 px-2 bg-card text-sm font-medium text-muted-foreground">
+          <div className="relative border-2 border-border rounded-lg p-4 bg-card dark:bg-card/50">
+            <Label className="absolute -top-3 left-3 px-2 bg-card text-sm font-medium text-muted-foreground border border-border rounded">
               Tags
             </Label>
             
-            {/* Always visible tags */}
             <div className="flex flex-wrap gap-2 mb-3">
               {primaryTags.map((tag) => (
                 <motion.div
                   key={tag.id}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  className="select-none"
                 >
                   <TagPill
                     tag={tag}
@@ -182,18 +163,23 @@ const CreatePost = () => {
               ))}
             </div>
             
-            {/* Expandable section for other tags */}
             {otherTags.length > 0 && (
               <div className="space-y-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowAllTags(!showAllTags)}
-                  className="p-2 h-auto"
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  {showAllTags ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllTags(!showAllTags)}
+                    className="p-2 h-auto hover:bg-accent"
+                  >
+                    {showAllTags ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    <span className="ml-2 text-sm">More Tags</span>
+                  </Button>
+                </motion.div>
                 
                 {showAllTags && (
                   <motion.div 
@@ -207,6 +193,7 @@ const CreatePost = () => {
                         key={tag.id}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
+                        className="select-none"
                       >
                         <TagPill
                           tag={tag}
@@ -221,9 +208,8 @@ const CreatePost = () => {
             )}
           </div>
 
-          {/* Anonymous posting section */}
-          <div className="relative border border-border rounded-lg p-4 bg-card">
-            <Label className="absolute -top-3 left-3 px-2 bg-card text-sm font-medium text-muted-foreground">
+          <div className="relative border-2 border-border rounded-lg p-4 bg-card dark:bg-card/50">
+            <Label className="absolute -top-3 left-3 px-2 bg-card text-sm font-medium text-muted-foreground border border-border rounded">
               Post Anonymously
             </Label>
             
@@ -251,7 +237,7 @@ const CreatePost = () => {
               type="submit" 
               className="w-full" 
               size="lg"
-              disabled={isSubmitting || !title.trim() || !content.trim() || selectedTags.length === 0}
+              disabled={isSubmitting || !title.trim() || selectedTags.length === 0}
             >
               {isSubmitting ? (
                 "Creating Post..."

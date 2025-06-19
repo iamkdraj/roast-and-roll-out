@@ -19,9 +19,10 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
 
   useEffect(() => {
     if (editorRef.current && content) {
-      // Convert JSON content to HTML for display
       const htmlContent = jsonToHtml(content);
-      editorRef.current.innerHTML = htmlContent;
+      if (editorRef.current.innerHTML !== htmlContent) {
+        editorRef.current.innerHTML = htmlContent;
+      }
     }
   }, []);
 
@@ -93,51 +94,56 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
     const content: any[] = [];
     const paragraphs = tempDiv.querySelectorAll('p');
     
-    if (paragraphs.length === 0 && tempDiv.textContent) {
-      // If no paragraphs, treat as single paragraph
+    if (paragraphs.length === 0 && tempDiv.textContent?.trim()) {
       content.push({
         type: 'paragraph',
-        content: [{ type: 'text', text: tempDiv.textContent }]
+        content: [{ type: 'text', text: tempDiv.textContent.trim() }]
       });
     } else {
       paragraphs.forEach(p => {
-        const textContent: any[] = [];
-        const walker = document.createTreeWalker(
-          p,
-          NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
-          null
-        );
+        const textNodes: any[] = [];
         
-        let node;
-        let currentText = '';
-        let currentMarks: any[] = [];
-        
-        while (node = walker.nextNode()) {
+        const processNode = (node: Node): void => {
           if (node.nodeType === Node.TEXT_NODE) {
-            currentText += node.textContent || '';
-          } else if (node.nodeType === Node.ELEMENT_NODE) {
-            const element = node as Element;
-            if (element.tagName === 'STRONG' || element.tagName === 'B') {
-              currentMarks.push({ type: 'bold' });
-            } else if (element.tagName === 'EM' || element.tagName === 'I') {
-              currentMarks.push({ type: 'italic' });
-            } else if (element.tagName === 'U') {
-              currentMarks.push({ type: 'underline' });
+            const text = node.textContent?.trim();
+            if (text) {
+              const marks: any[] = [];
+              let parent = node.parentElement;
+              
+              while (parent && parent !== p) {
+                if (parent.tagName === 'STRONG' || parent.tagName === 'B') {
+                  marks.push({ type: 'bold' });
+                } else if (parent.tagName === 'EM' || parent.tagName === 'I') {
+                  marks.push({ type: 'italic' });
+                } else if (parent.tagName === 'U') {
+                  marks.push({ type: 'underline' });
+                }
+                parent = parent.parentElement;
+              }
+              
+              textNodes.push({
+                type: 'text',
+                text: text,
+                ...(marks.length > 0 && { marks })
+              });
             }
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            Array.from(node.childNodes).forEach(processNode);
           }
-        }
+        };
         
-        if (currentText) {
-          textContent.push({
+        Array.from(p.childNodes).forEach(processNode);
+        
+        if (textNodes.length === 0 && p.textContent?.trim()) {
+          textNodes.push({
             type: 'text',
-            text: currentText,
-            marks: currentMarks.length > 0 ? currentMarks : undefined
+            text: p.textContent.trim()
           });
         }
         
         content.push({
           type: 'paragraph',
-          content: textContent
+          content: textNodes
         });
       });
     }
@@ -146,24 +152,26 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
       type: 'doc',
       content: content.length > 0 ? content : [{
         type: 'paragraph',
-        content: [{ type: 'text', text: tempDiv.textContent || '' }]
+        content: [{ type: 'text', text: '' }]
       }]
     };
   };
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden">
+    <div className="overflow-hidden">
       <div
         ref={editorRef}
         contentEditable
-        className="min-h-[200px] p-4 focus:outline-none"
+        className="min-h-[150px] p-4 focus:outline-none text-sm leading-relaxed"
         onInput={handleInput}
         onKeyUp={updateActiveFormats}
         onMouseUp={updateActiveFormats}
-        style={{ minHeight: '200px' }}
+        onFocus={updateActiveFormats}
+        style={{ minHeight: '150px' }}
+        suppressContentEditableWarning={true}
       />
       
-      <div className="border-t border-border p-2 bg-muted/50">
+      <div className="border-t border-border p-3 bg-muted/30">
         <div className="flex flex-wrap gap-1">
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button

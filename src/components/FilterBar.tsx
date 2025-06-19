@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { TagPill } from "@/components/TagPill";
-import { Filter, X, Clock, TrendingUp, ArrowUpDown, Languages } from "lucide-react";
+import { Filter, X, Clock, TrendingUp, ArrowUpDown, Hash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -36,7 +36,6 @@ export const FilterBar = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Order tags as requested: NSFW, Jokes, Roasts, Insults, Pun, Wordplay, Dark, then rest
   const orderedTags = [...tags].sort((a, b) => {
     const order = ['NSFW', 'Jokes', 'Roasts', 'Insults', 'Pun', 'Wordplay', 'Dark'];
     const aIndex = order.findIndex(name => 
@@ -73,7 +72,7 @@ export const FilterBar = ({
   };
 
   return (
-    <div className="sticky top-14 z-30 mb-4">
+    <div className="sticky top-12 z-40 mb-4">
       <div className="relative">
         <motion.div
           whileHover={{ scale: 1.05 }}
@@ -84,7 +83,7 @@ export const FilterBar = ({
             variant="outline"
             size={isScrolled ? "icon" : "sm"}
             onClick={() => setIsExpanded(!isExpanded)}
-            className="fixed right-4 z-50 shadow-lg bg-background/80 backdrop-blur-sm transition-all duration-300"
+            className="fixed right-4 z-50 shadow-lg bg-background/90 backdrop-blur-sm transition-all duration-300 border-border hover:bg-accent"
           >
             <Filter className="w-4 h-4" />
             {!isScrolled && <span className="ml-2">Filter</span>}
@@ -92,7 +91,7 @@ export const FilterBar = ({
               <motion.span 
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full"
+                className="ml-1 text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
               >
                 {selectedTags.length}
               </motion.span>
@@ -107,10 +106,9 @@ export const FilterBar = ({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -10 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="absolute right-0 top-12 w-80 bg-background/95 backdrop-blur-xl rounded-lg shadow-xl border border-border/60 p-4 z-40"
+              className="absolute right-0 top-12 w-80 bg-background/95 backdrop-blur-xl rounded-lg shadow-xl border border-border p-4 z-50"
             >
               <div className="space-y-4">
-                {/* Clear button */}
                 {selectedTags.length > 0 && (
                   <div className="flex justify-end">
                     <motion.div
@@ -130,7 +128,6 @@ export const FilterBar = ({
                   </div>
                 )}
 
-                {/* Time Filter */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
@@ -149,7 +146,7 @@ export const FilterBar = ({
                             "h-8 text-xs w-full transition-all duration-200",
                             currentSort === filter.value
                               ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                              : "text-muted-foreground hover:text-foreground"
+                              : "text-muted-foreground hover:text-foreground hover:bg-accent"
                           )}
                         >
                           {filter.label}
@@ -159,7 +156,6 @@ export const FilterBar = ({
                   </div>
                 </div>
 
-                {/* Sort Options */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
@@ -178,7 +174,7 @@ export const FilterBar = ({
                             "h-8 text-xs w-full transition-all duration-200",
                             currentSort === option.value
                               ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                              : "text-muted-foreground hover:text-foreground"
+                              : "text-muted-foreground hover:text-foreground hover:bg-accent"
                           )}
                         >
                           {option.label}
@@ -188,11 +184,10 @@ export const FilterBar = ({
                   </div>
                 </div>
 
-                {/* Tags */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                      <Languages className="h-4 w-4 text-muted-foreground" />
+                      <Hash className="h-4 w-4 text-muted-foreground" />
                     </motion.div>
                     <h4 className="text-sm font-medium">Filter by Tags</h4>
                   </div>
@@ -203,13 +198,14 @@ export const FilterBar = ({
                           key={tag.id}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
+                          className="select-none"
                         >
                           <TagPill
                             tag={tag}
                             isSelected={selectedTags.includes(tag.id)}
                             onClick={() => handleTagClick(tag.id)}
                             className={cn(
-                              "text-xs transition-all duration-200",
+                              "text-xs transition-all duration-200 cursor-pointer",
                               selectedTags.includes(tag.id) && "bg-primary text-primary-foreground hover:bg-primary/90"
                             )}
                           />
