@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { TagPill } from "@/components/TagPill";
-import { Filter, X, Clock, TrendingUp, ArrowUpDown, Hash } from "lucide-react";
+import { Filter, X, Clock, TrendingUp, ArrowUpDown, Hash, Languages } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -72,18 +72,17 @@ export const FilterBar = ({
   };
 
   return (
-    <div className="sticky top-12 z-40 mb-4">
+    <div className="sticky top-12 z-30 mb-4">
       <div className="relative">
         <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
           <Button
             variant="outline"
             size={isScrolled ? "icon" : "sm"}
             onClick={() => setIsExpanded(!isExpanded)}
-            className="fixed right-4 z-50 shadow-lg bg-background/90 backdrop-blur-sm transition-all duration-300 border-border hover:bg-accent"
+            className="fixed right-4 z-40 shadow-lg bg-background/90 backdrop-blur-sm transition-all duration-300 border-border hover:bg-accent"
           >
             <Filter className="w-4 h-4" />
             {!isScrolled && <span className="ml-2">Filter</span>}
@@ -181,6 +180,35 @@ export const FilterBar = ({
                         </Button>
                       </motion.div>
                     ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                      <Languages className="h-4 w-4 text-muted-foreground" />
+                    </motion.div>
+                    <h4 className="text-sm font-medium">Language</h4>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs w-full text-muted-foreground hover:text-foreground hover:bg-accent"
+                      >
+                        English
+                      </Button>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs w-full text-muted-foreground hover:text-foreground hover:bg-accent"
+                      >
+                        All
+                      </Button>
+                    </motion.div>
                   </div>
                 </div>
 

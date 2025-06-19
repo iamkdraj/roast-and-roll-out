@@ -35,7 +35,7 @@ const CreatePost = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
 
-  const primaryTags = tags.filter(tag => ['Roast', 'Joke', 'Pun'].includes(tag.name));
+  const primaryTags = tags.filter(tag => ['Roast', 'Joke', 'Pun'].includes(tag.name)).slice(0, 3);
   const otherTags = tags.filter(tag => !['Roast', 'Joke', 'Pun'].includes(tag.name));
 
   const handleTagToggle = (tagId: string) => {
@@ -90,7 +90,7 @@ const CreatePost = () => {
         isAnonymous: !user || isAnonymous
       });
 
-      toast({ title: "Success", description: "Your post has been created!" });
+      toast({ title: "Success! 🎉", description: "Your roast has been posted successfully!" });
       navigate("/");
     } catch (error: any) {
       console.error('Error creating post:', error);
@@ -114,39 +114,40 @@ const CreatePost = () => {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
         >
-          <div className="relative border-2 border-border rounded-lg p-6 bg-card dark:bg-card/50">
-            <div className="relative mb-6">
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter your post title..."
-                className="text-lg font-semibold border-2 border-border focus:border-primary bg-background"
-                maxLength={200}
-              />
-              <Label className="absolute -top-3 left-3 px-2 bg-card text-sm font-medium text-muted-foreground border border-border rounded">
-                Title
-              </Label>
-            </div>
+          {/* Title Input */}
+          <div className="relative">
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter your post title..."
+              className="text-lg font-semibold border-2 border-border focus:border-primary bg-background pt-6 pb-3 px-4"
+              maxLength={200}
+            />
+            <Label className="absolute top-2 left-4 text-xs font-medium text-muted-foreground">
+              Title
+            </Label>
+          </div>
 
-            <div className="relative">
-              <div className="border-2 border-border rounded-lg bg-background focus-within:border-primary transition-colors">
-                <RichTextEditor
-                  content={content}
-                  onChange={setContent}
-                />
-              </div>
-              <Label className="absolute -top-3 left-3 px-2 bg-card text-sm font-medium text-muted-foreground border border-border rounded">
+          {/* Content Input */}
+          <div className="relative">
+            <div className="border-2 border-border rounded-lg bg-background focus-within:border-primary transition-colors pt-6">
+              <Label className="absolute top-2 left-4 text-xs font-medium text-muted-foreground z-10">
                 Body
               </Label>
+              <RichTextEditor
+                content={content}
+                onChange={setContent}
+              />
             </div>
           </div>
 
-          <div className="relative border-2 border-border rounded-lg p-4 bg-card dark:bg-card/50">
-            <Label className="absolute -top-3 left-3 px-2 bg-card text-sm font-medium text-muted-foreground border border-border rounded">
+          {/* Tags */}
+          <div className="relative border-2 border-border rounded-lg p-4 bg-background">
+            <Label className="absolute -top-3 left-3 px-2 bg-background text-xs font-medium text-muted-foreground">
               Tags
             </Label>
             
-            <div className="flex flex-wrap gap-2 mb-3">
+            <div className="flex items-center gap-2">
               {primaryTags.map((tag) => (
                 <motion.div
                   key={tag.id}
@@ -161,55 +162,53 @@ const CreatePost = () => {
                   />
                 </motion.div>
               ))}
-            </div>
-            
-            {otherTags.length > 0 && (
-              <div className="space-y-2">
+              
+              {otherTags.length > 0 && (
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={() => setShowAllTags(!showAllTags)}
-                    className="p-2 h-auto hover:bg-accent"
+                    className="h-7 px-2"
                   >
-                    {showAllTags ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    <span className="ml-2 text-sm">More Tags</span>
+                    {showAllTags ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                   </Button>
                 </motion.div>
-                
-                {showAllTags && (
-                  <motion.div 
-                    className="flex flex-wrap gap-2"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
+              )}
+            </div>
+            
+            {showAllTags && otherTags.length > 0 && (
+              <motion.div 
+                className="flex flex-wrap gap-2 mt-3"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+              >
+                {otherTags.map((tag) => (
+                  <motion.div
+                    key={tag.id}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="select-none"
                   >
-                    {otherTags.map((tag) => (
-                      <motion.div
-                        key={tag.id}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="select-none"
-                      >
-                        <TagPill
-                          tag={tag}
-                          isSelected={selectedTags.includes(tag.id)}
-                          onClick={() => handleTagToggle(tag.id)}
-                        />
-                      </motion.div>
-                    ))}
+                    <TagPill
+                      tag={tag}
+                      isSelected={selectedTags.includes(tag.id)}
+                      onClick={() => handleTagToggle(tag.id)}
+                    />
                   </motion.div>
-                )}
-              </div>
+                ))}
+              </motion.div>
             )}
           </div>
 
-          <div className="relative border-2 border-border rounded-lg p-4 bg-card dark:bg-card/50">
-            <Label className="absolute -top-3 left-3 px-2 bg-card text-sm font-medium text-muted-foreground border border-border rounded">
+          {/* Anonymous Post Option */}
+          <div className="relative border-2 border-border rounded-lg p-4 bg-background">
+            <Label className="absolute -top-3 left-3 px-2 bg-background text-xs font-medium text-muted-foreground">
               Post Anonymously
             </Label>
             
@@ -229,6 +228,7 @@ const CreatePost = () => {
             )}
           </div>
 
+          {/* Submit Button */}
           <motion.div
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}

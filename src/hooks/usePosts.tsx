@@ -322,7 +322,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
           .delete()
           .eq('post_id', postId)
           .eq('user_id', user.id);
-        toast.success("Post removed from library");
+        toast.success("Post removed from your library! 📚");
       } else {
         await supabase
           .from('saved_posts')
@@ -330,7 +330,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
             post_id: postId,
             user_id: user.id
           });
-        toast.success("Post saved to library! 📌");
+        toast.success("Post saved to your library! 📌✨");
       }
 
       await fetchPosts();
@@ -350,7 +350,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
           ip_hash: user ? null : 'anonymous_' + Date.now()
         });
 
-      toast.success("Post reported. Thanks for keeping Roastr clean! 🚫");
+      toast.success("Post reported successfully! 🚨 Thanks for keeping Roastr clean!");
     } catch (error) {
       console.error('Error reporting post:', error);
       toast.error('Failed to report post');
@@ -395,7 +395,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
         )
       );
 
-      toast.success("Post updated successfully");
+      toast.success("Post updated successfully! ✏️");
     } catch (error) {
       console.error('Error editing post:', error);
       toast.error('Failed to edit post');
@@ -427,7 +427,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
 
       // Remove the post from local state immediately
       setPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
-      toast.success("Post deleted successfully");
+      toast.success("Post deleted successfully! 🗑️");
     } catch (error) {
       console.error('Error deleting post:', error);
       toast.error('Failed to delete post');
