@@ -127,7 +127,7 @@ const Leaderboard = () => {
                 <Trophy className="w-5 h-5 text-yellow-500" />
                 {periods.find(p => p.value === selectedPeriod)?.label} Leaders
               </CardTitle>
-            </CardContent>
+            </CardHeader>
             <CardContent className="space-y-4">
               {currentData.map((user, index) => (
                 <div
@@ -145,7 +145,7 @@ const Leaderboard = () => {
                   {/* User Info */}
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibol text-lg">{user.username}</h3>
+                      <h3 className="font-semibold text-lg">{user.username}</h3>
                       <Badge className={cn("text-xs", getRankBadgeColor(user.rank))}>
                         Rank #{user.rank}
                       </Badge>
