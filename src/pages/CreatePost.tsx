@@ -38,7 +38,11 @@ const CreatePost = () => {
   const primaryTags = tags.filter(tag => ['Roast', 'Joke', 'Pun'].includes(tag.name)).slice(0, 3);
   const otherTags = tags.filter(tag => !['Roast', 'Joke', 'Pun'].includes(tag.name));
 
-  const handleTagToggle = (tagId: string) => {
+  const handleTagToggle = (tagId: string, event?: React.MouseEvent) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
     setSelectedTags(prev => 
       prev.includes(tagId) 
         ? prev.filter(id => id !== tagId)
@@ -52,6 +56,21 @@ const CreatePost = () => {
     return todaysPosts.length;
   };
 
+  const hasContent = () => {
+    if (!content || !content.content) return false;
+    
+    const hasTextContent = content.content.some((node: any) => {
+      if (node.type === 'paragraph' && node.content) {
+        return node.content.some((textNode: any) => 
+          textNode.type === 'text' && textNode.text && textNode.text.trim()
+        );
+      }
+      return false;
+    });
+    
+    return hasTextContent;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -60,8 +79,7 @@ const CreatePost = () => {
       return;
     }
 
-    if (!content.content || content.content.length === 0 || 
-        (content.content.length === 1 && (!content.content[0].content || content.content[0].content.length === 0))) {
+    if (!hasContent()) {
       toast({ title: "Error", description: "Please enter some content", variant: "destructive" });
       return;
     }
@@ -115,7 +133,7 @@ const CreatePost = () => {
           transition={{ delay: 0.1 }}
         >
           {/* Title Input */}
-          <div className="relative border-2 border-border rounded-lg p-4 bg-background">
+          <div className="relative border-2 border-border rounded-lg p-3 bg-background focus-within:border-primary transition-colors">
             <Label className="absolute -top-3 left-3 px-2 bg-background text-xs font-medium text-muted-foreground">
               Title
             </Label>
@@ -123,7 +141,7 @@ const CreatePost = () => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter your post title..."
-              className="border-0 text-lg font-semibold bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
+              className="border-0 text-lg font-semibold bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-8"
               maxLength={200}
             />
           </div>
@@ -149,60 +167,48 @@ const CreatePost = () => {
             
             <div className="flex items-center gap-2">
               {primaryTags.map((tag) => (
-                <motion.div
+                <div
                   key={tag.id}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                   className="select-none"
+                  onClick={(e) => handleTagToggle(tag.id, e)}
                 >
                   <TagPill
                     tag={tag}
                     isSelected={selectedTags.includes(tag.id)}
-                    onClick={() => handleTagToggle(tag.id)}
+                    onClick={() => {}}
                   />
-                </motion.div>
+                </div>
               ))}
               
               {otherTags.length > 0 && (
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAllTags(!showAllTags)}
+                  className="h-7 px-2"
                 >
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowAllTags(!showAllTags)}
-                    className="h-7 px-2"
-                  >
-                    {showAllTags ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                  </Button>
-                </motion.div>
+                  {showAllTags ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </Button>
               )}
             </div>
             
             {showAllTags && otherTags.length > 0 && (
-              <motion.div 
-                className="flex flex-wrap gap-2 mt-3"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-              >
+              <div className="flex flex-wrap gap-2 mt-3">
                 {otherTags.map((tag) => (
-                  <motion.div
+                  <div
                     key={tag.id}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
                     className="select-none"
+                    onClick={(e) => handleTagToggle(tag.id, e)}
                   >
                     <TagPill
                       tag={tag}
                       isSelected={selectedTags.includes(tag.id)}
-                      onClick={() => handleTagToggle(tag.id)}
+                      onClick={() => {}}
                     />
-                  </motion.div>
+                  </div>
                 ))}
-              </motion.div>
+              </div>
             )}
           </div>
 
@@ -229,26 +235,21 @@ const CreatePost = () => {
           </div>
 
           {/* Submit Button */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <Button 
+            type="submit" 
+            className="w-full" 
+            size="lg"
+            disabled={isSubmitting || !title.trim() || selectedTags.length === 0}
           >
-            <Button 
-              type="submit" 
-              className="w-full" 
-              size="lg"
-              disabled={isSubmitting || !title.trim() || selectedTags.length === 0}
-            >
-              {isSubmitting ? (
-                "Creating Post..."
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Create Post
-                </>
-              )}
-            </Button>
-          </motion.div>
+            {isSubmitting ? (
+              "Creating Post..."
+            ) : (
+              <>
+                <Send className="w-4 h-4 mr-2" />
+                Create Post
+              </>
+            )}
+          </Button>
         </motion.form>
       </div>
     </Layout>

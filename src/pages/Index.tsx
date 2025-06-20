@@ -20,6 +20,9 @@ const Index = () => {
   useEffect(() => {
     let filtered = [...posts];
 
+    // Remove AI posts
+    filtered = filtered.filter(post => !post.isAI);
+
     // Filter by NSFW setting
     if (!showNSFW) {
       filtered = filtered.filter(post => !post.isNSFW);
@@ -126,7 +129,7 @@ const Index = () => {
       />
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-2">
+      <main className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

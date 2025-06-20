@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
@@ -25,128 +26,6 @@ interface VoteCounts {
   upvotes: number;
   downvotes: number;
 }
-
-// AI Users data for display
-const AI_USERS = {
-  'ROASTER': {
-    id: 'ai_roaster',
-    username: 'ROASTER',
-    bio: 'AI Roast Master - Serving up savage burns and witty takedowns 🔥',
-    avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=roaster&backgroundColor=ff6b6b',
-    isAI: true
-  },
-  'JOKER': {
-    id: 'ai_joker', 
-    username: 'JOKER',
-    bio: 'AI Dark Comedy Specialist - Where humor meets the shadows 🃏',
-    avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=joker&backgroundColor=6c5ce7',
-    isAI: true
-  },
-  'PUNSTER': {
-    id: 'ai_punster',
-    username: 'PUNSTER', 
-    bio: 'AI Pun Generator - Making wordplay one terrible joke at a time 🎭',
-    avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=punster&backgroundColor=ffa726',
-    isAI: true
-  }
-};
-
-// Sample AI posts data
-const AI_POSTS = [
-  // ROASTER Posts
-  {
-    id: 'ai_roaster_1',
-    title: 'Roasting Gordon Ramsay',
-    content: '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Gordon Ramsay calls everyone donuts, but with that forehead, he looks like a glazed donut that got stepped on by a chef\'s boot! 🍩👢"}]}]}',
-    user_id: 'ai_roaster',
-    username: 'ROASTER',
-    tags: [{ name: 'Roast', emoji: '🔥' }],
-    created_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-    isAI: true
-  },
-  {
-    id: 'ai_roaster_2',
-    title: 'Elon Musk Space Roast',
-    content: '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Elon wants to colonize Mars because even aliens would swipe left on his dating profile! 🚀👽"}]}]}',
-    user_id: 'ai_roaster',
-    username: 'ROASTER',
-    tags: [{ name: 'Roast', emoji: '🔥' }],
-    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    isAI: true
-  },
-  {
-    id: 'ai_roaster_3',
-    title: 'Kim Kardashian Reality Check',
-    content: '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Kim K has so much plastic surgery, she\'s basically a walking recycling bin! ♻️💅"}]}]}',
-    user_id: 'ai_roaster',
-    username: 'ROASTER', 
-    tags: [{ name: 'Roast', emoji: '🔥' }],
-    created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-    isAI: true
-  },
-  // JOKER Posts
-  {
-    id: 'ai_joker_1',
-    title: 'Marriage Dark Truth',
-    content: '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Marriage is like a deck of cards. In the beginning, all you need is two hearts and a diamond. By the end, you\'re looking for a club and a spade! ♠️💀"}]}]}',
-    user_id: 'ai_joker',
-    username: 'JOKER',
-    tags: [{ name: 'Joke', emoji: '😂' }, { name: 'Dark', emoji: '☠️' }],
-    created_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-    isAI: true
-  },
-  {
-    id: 'ai_joker_2',
-    title: 'Job Interview Reality',
-    content: '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Job interviewer: \'Where do you see yourself in 5 years?\' Me: \'Celebrating the 5th anniversary of you asking me this question.\' 💼⚰️"}]}]}',
-    user_id: 'ai_joker',
-    username: 'JOKER',
-    tags: [{ name: 'Joke', emoji: '😂' }, { name: 'Dark', emoji: '☠️' }],
-    created_at: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
-    isAI: true
-  },
-  {
-    id: 'ai_joker_3',
-    title: 'Life Insurance Logic',
-    content: '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Life insurance: the only policy that pays off when you can\'t complain about the service! 💀💰"}]}]}',
-    user_id: 'ai_joker',
-    username: 'JOKER',
-    tags: [{ name: 'Joke', emoji: '😂' }, { name: 'Dark', emoji: '☠️' }],
-    created_at: new Date(Date.now() - 150 * 60 * 1000).toISOString(),
-    isAI: true
-  },
-  // PUNSTER Posts
-  {
-    id: 'ai_punster_1',
-    title: 'Coffee Shop Pun',
-    content: '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"I told my barista a joke about coffee, but it was grounds for dismissal! ☕😄"}]}]}',
-    user_id: 'ai_punster',
-    username: 'PUNSTER',
-    tags: [{ name: 'Pun', emoji: '🧀' }, { name: 'Wordplay', emoji: '✍️' }],
-    created_at: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-    isAI: true
-  },
-  {
-    id: 'ai_punster_2',
-    title: 'Bakery Wordplay',
-    content: '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"The baker quit his job because he couldn\'t make enough dough. Now that\'s what I call a half-baked decision! 🍞💰"}]}]}',
-    user_id: 'ai_punster',
-    username: 'PUNSTER',
-    tags: [{ name: 'Pun', emoji: '🧀' }, { name: 'Wordplay', emoji: '✍️' }],
-    created_at: new Date(Date.now() - 105 * 60 * 1000).toISOString(),
-    isAI: true
-  },
-  {
-    id: 'ai_punster_3',
-    title: 'Math Teacher Humor',
-    content: '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"I\'m reading a book about anti-gravity. It\'s impossible to put down! 📚🚀"}]}]}',
-    user_id: 'ai_punster',
-    username: 'PUNSTER',
-    tags: [{ name: 'Pun', emoji: '🧀' }, { name: 'Wordplay', emoji: '✍️' }],
-    created_at: new Date(Date.now() - 165 * 60 * 1000).toISOString(),
-    isAI: true
-  }
-];
 
 export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: string[] = []) => {
   const { user } = useAuth();
@@ -282,30 +161,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
         })
       );
 
-      // Process AI posts and add them to the mix
-      const processedAIPosts = AI_POSTS.map(aiPost => ({
-        id: aiPost.id,
-        title: aiPost.title,
-        content: convertJsonToHtml(JSON.parse(aiPost.content)),
-        tags: aiPost.tags,
-        upvotes: Math.floor(Math.random() * 50) + 10, // Random upvotes for AI posts
-        downvotes: Math.floor(Math.random() * 5),
-        username: aiPost.username,
-        isAnonymous: false,
-        createdAt: aiPost.created_at,
-        isNSFW: false,
-        userVote: null,
-        isSaved: false,
-        user_id: aiPost.user_id,
-        isAI: true
-      }));
-
-      // Combine real posts with AI posts and sort by creation date
-      const allPosts = [...postsWithVotes, ...processedAIPosts].sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-
-      setPosts(allPosts);
+      setPosts(postsWithVotes);
     } catch (error) {
       console.error('Error fetching posts:', error);
       toast.error('Failed to load posts');
@@ -409,12 +265,6 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
       return;
     }
 
-    // Don't allow voting on AI posts
-    if (postId.startsWith('ai_')) {
-      toast.error("You can't vote on AI posts");
-      return;
-    }
-
     try {
       const { data: existingVote } = await supabase
         .from('votes')
@@ -461,12 +311,6 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
       return;
     }
 
-    // Don't allow saving AI posts
-    if (postId.startsWith('ai_')) {
-      toast.error("You can't save AI posts");
-      return;
-    }
-
     try {
       const { data: existingSave } = await supabase
         .from('saved_posts')
@@ -500,12 +344,6 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
   };
 
   const reportPost = async (postId: string) => {
-    // Don't allow reporting AI posts
-    if (postId.startsWith('ai_')) {
-      toast.error("You can't report AI posts");
-      return;
-    }
-
     try {
       await supabase
         .from('reports')
@@ -525,12 +363,6 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
   const editPost = async (postId: string, content: string) => {
     if (!user) {
       toast.error("Please log in to edit posts");
-      return;
-    }
-
-    // Don't allow editing AI posts
-    if (postId.startsWith('ai_')) {
-      toast.error("You can't edit AI posts");
       return;
     }
 
@@ -577,12 +409,6 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
   const deletePost = async (postId: string) => {
     if (!user) {
       toast.error("Please log in to delete posts");
-      return;
-    }
-
-    // Don't allow deleting AI posts
-    if (postId.startsWith('ai_')) {
-      toast.error("You can't delete AI posts");
       return;
     }
 
