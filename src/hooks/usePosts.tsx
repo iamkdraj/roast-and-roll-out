@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
@@ -88,10 +87,15 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
             username = profileData?.username || "Unknown";
           }
 
+          // Ensure content is always a string
+          const contentString = typeof post.content === 'string' 
+            ? post.content 
+            : JSON.stringify(post.content) || "";
+
           return {
             id: post.id,
             title: post.title || "Untitled",
-            content: post.content || "",
+            content: contentString,
             tags: post.post_tags.map((pt: any) => ({
               emoji: pt.tags.emoji,
               name: pt.tags.name
@@ -128,9 +132,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
     tags: string[];
     isAnonymous: boolean;
   }) => {
-    // Allow anonymous posting without login for limited posts
     if (!user && postData.isAnonymous) {
-      // Check anonymous post limit using a simple localStorage approach
       const anonymousPostsKey = 'anonymous_posts_' + new Date().toDateString();
       const todaysPosts = JSON.parse(localStorage.getItem(anonymousPostsKey) || '[]');
       
@@ -138,7 +140,6 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
         throw new Error("Anonymous posting limit reached. You can post 2 anonymous posts every 24 hours.");
       }
 
-      // Create anonymous post
       const { data, error } = await supabase
         .from('posts')
         .insert({
@@ -153,11 +154,9 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
 
       if (error) throw error;
 
-      // Update localStorage
       todaysPosts.push(Date.now());
       localStorage.setItem(anonymousPostsKey, JSON.stringify(todaysPosts));
 
-      // Add tags
       if (postData.tags.length > 0) {
         const tagInserts = postData.tags.map(tagId => ({
           post_id: data.id,
@@ -190,7 +189,6 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
 
     if (error) throw error;
 
-    // Add tags
     if (postData.tags.length > 0) {
       const tagInserts = postData.tags.map(tagId => ({
         post_id: data.id,
@@ -315,14 +313,12 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
     }
 
     try {
-      // First check if the user owns this post
       const postToEdit = posts.find(p => p.id === postId);
       if (!postToEdit || postToEdit.user_id !== user.id) {
         toast.error("You can only edit your own posts");
         return;
       }
 
-      // Update post with new content
       const { error: updateError } = await supabase
         .from('posts')
         .update({
@@ -334,7 +330,6 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
 
       if (updateError) throw updateError;
 
-      // Update local state
       setPosts(prevPosts =>
         prevPosts.map(p =>
           p.id === postId
@@ -358,7 +353,6 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
     }
 
     try {
-      // First check if the user owns this post
       const postToDelete = posts.find(p => p.id === postId);
       if (!postToDelete || postToDelete.user_id !== user.id) {
         toast.error("You can only delete your own posts");
@@ -373,7 +367,6 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
 
       if (error) throw error;
 
-      // Remove the post from local state immediately
       setPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
       toast.success("Post deleted successfully! 🗑️");
     } catch (error) {

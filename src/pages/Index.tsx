@@ -15,34 +15,15 @@ const Index = () => {
   const [filteredPosts, setFilteredPosts] = useState(posts);
   const [sortBy, setSortBy] = useState("newest");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [selectedLanguage, setSelectedLanguage] = useState("all");
   const [showNSFW, setShowNSFW] = useState(localStorage.getItem('showNSFW') === 'true');
 
   useEffect(() => {
     let filtered = [...posts];
 
-    // Filter by NSFW setting
     if (!showNSFW) {
       filtered = filtered.filter(post => !post.isNSFW);
     }
 
-    // Filter by language
-    if (selectedLanguage !== "all") {
-      // This would need to be implemented based on post content analysis
-      // For now, we'll just filter based on content patterns
-      if (selectedLanguage === "hindi") {
-        filtered = filtered.filter(post => 
-          /[\u0900-\u097F]/.test(post.content) || /[\u0900-\u097F]/.test(post.title)
-        );
-      } else if (selectedLanguage === "english") {
-        filtered = filtered.filter(post => 
-          !/[\u0900-\u097F]/.test(post.content) && !/[\u0900-\u097F]/.test(post.title)
-        );
-      }
-      // Hinglish would be a mix, so we don't filter it specifically
-    }
-
-    // Filter by tags
     if (selectedTags.length > 0) {
       filtered = filtered.filter(post => 
         selectedTags.some(tagId => {
@@ -52,7 +33,6 @@ const Index = () => {
       );
     }
 
-    // Sort posts
     switch (sortBy) {
       case "newest":
         filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -90,9 +70,8 @@ const Index = () => {
     }
 
     setFilteredPosts(filtered);
-  }, [posts, selectedTags, sortBy, selectedLanguage, showNSFW, tags]);
+  }, [posts, selectedTags, sortBy, showNSFW, tags]);
 
-  // Update NSFW setting from localStorage
   useEffect(() => {
     const handleStorageChange = () => {
       setShowNSFW(localStorage.getItem('showNSFW') === 'true');
@@ -138,23 +117,18 @@ const Index = () => {
 
   return (
     <Layout>
-      {/* Filter Bar */}
       <FilterBar
         tags={tags}
         selectedTags={selectedTags}
         onTagSelect={handleTagSelect}
         onClearFilters={() => {
           setSelectedTags([]);
-          setSelectedLanguage("all");
           setSortBy("newest");
         }}
         onSortChange={setSortBy}
         currentSort={sortBy}
-        selectedLanguage={selectedLanguage}
-        onLanguageChange={setSelectedLanguage}
       />
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 pt-4">
         <motion.div
           initial={{ opacity: 0 }}

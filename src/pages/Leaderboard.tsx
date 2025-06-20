@@ -3,12 +3,45 @@ import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Award, Crown, TrendingUp, Star } from "lucide-react";
-import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Trophy, Medal, Award, Crown, TrendingUp, Star, Hash, Users } from "lucide-react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+
+interface LeaderboardUser {
+  rank: number;
+  username: string;
+  score: number;
+  posts: number;
+  upvotes: number;
+  ratio?: number;
+}
+
+interface TopPost {
+  id: string;
+  title: string;
+  content: string;
+  username: string;
+  upvotes: number;
+  created_at: string;
+  tags: Array<{ emoji: string; name: string }>;
+}
+
+interface TagRanking {
+  name: string;
+  emoji: string;
+  usage_count: number;
+  total_upvotes: number;
+}
 
 const Leaderboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("daily");
+  const [selectedView, setSelectedView] = useState("users");
+  const [users, setUsers] = useState<LeaderboardUser[]>([]);
+  const [topPosts, setTopPosts] = useState<TopPost[]>([]);
+  const [tagRankings, setTagRankings] = useState<TagRanking[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const periods = [
     { value: "daily", label: "Daily", icon: Star },
@@ -18,43 +51,211 @@ const Leaderboard = () => {
     { value: "alltime", label: "All Time", icon: Crown }
   ];
 
-  // Mock leaderboard data
-  const leaderboardData = {
-    daily: [
-      { rank: 1, username: "RoastMaster", score: 245, posts: 12, upvotes: 189 },
-      { rank: 2, username: "WittyUser", score: 198, posts: 8, upvotes: 156 },
-      { rank: 3, username: "SavageBurn", score: 167, posts: 10, upvotes: 134 },
-      { rank: 4, username: "ComedyKing", score: 134, posts: 6, upvotes: 98 },
-      { rank: 5, username: "PunMaster", score: 112, posts: 7, upvotes: 87 }
-    ],
-    weekly: [
-      { rank: 1, username: "RoastMaster", score: 1245, posts: 42, upvotes: 989 },
-      { rank: 2, username: "WittyUser", score: 998, posts: 38, upvotes: 756 },
-      { rank: 3, username: "SavageBurn", score: 867, posts: 35, upvotes: 634 },
-      { rank: 4, username: "ComedyKing", score: 734, posts: 28, upvotes: 598 },
-      { rank: 5, username: "PunMaster", score: 612, posts: 25, upvotes: 487 }
-    ],
-    monthly: [
-      { rank: 1, username: "RoastMaster", score: 4245, posts: 142, upvotes: 3189 },
-      { rank: 2, username: "WittyUser", score: 3998, posts: 138, upvotes: 2756 },
-      { rank: 3, username: "SavageBurn", score: 3267, posts: 125, upvotes: 2434 },
-      { rank: 4, username: "ComedyKing", score: 2734, posts: 118, upvotes: 2198 },
-      { rank: 5, username: "PunMaster", score: 2412, posts: 105, upvotes: 1987 }
-    ],
-    yearly: [
-      { rank: 1, username: "RoastMaster", score: 24245, posts: 542, upvotes: 18189 },
-      { rank: 2, username: "WittyUser", score: 19998, posts: 438, upvotes: 15756 },
-      { rank: 3, username: "SavageBurn", score: 17267, posts: 425, upvotes: 14434 },
-      { rank: 4, username: "ComedyKing", score: 15734, posts: 418, upvotes: 12198 },
-      { rank: 5, username: "PunMaster", score: 14412, posts: 405, upvotes: 11987 }
-    ],
-    alltime: [
-      { rank: 1, username: "RoastMaster", score: 54245, posts: 1542, upvotes: 42189 },
-      { rank: 2, username: "WittyUser", score: 49998, posts: 1338, upvotes: 38756 },
-      { rank: 3, username: "SavageBurn", score: 47267, posts: 1225, upvotes: 36434 },
-      { rank: 4, username: "ComedyKing", score: 45734, posts: 1118, upvotes: 34198 },
-      { rank: 5, username: "PunMaster", score: 44412, posts: 1005, upvotes: 32987 }
-    ]
+  useEffect(() => {
+    fetchLeaderboardData();
+  }, [selectedPeriod]);
+
+  const fetchLeaderboardData = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([
+        fetchTopUsers(),
+        fetchTopPosts(),
+        fetchTagRankings()
+      ]);
+    } catch (error) {
+      console.error('Error fetching leaderboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getDateFilter = () => {
+    const now = new Date();
+    switch (selectedPeriod) {
+      case "daily":
+        const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        return dayAgo.toISOString();
+      case "weekly":
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return weekAgo.toISOString();
+      case "monthly":
+        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        return monthAgo.toISOString();
+      case "yearly":
+        const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        return yearAgo.toISOString();
+      default:
+        return "1970-01-01T00:00:00.000Z";
+    }
+  };
+
+  const fetchTopUsers = async () => {
+    try {
+      const dateFilter = getDateFilter();
+      
+      // Get users with their post counts and upvotes
+      const { data: userData, error } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          username,
+          created_at
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const userStats = await Promise.all(
+        userData.map(async (user) => {
+          // Get post count
+          const { data: posts } = await supabase
+            .from('posts')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('status', 'visible')
+            .gte('created_at', dateFilter);
+
+          // Get total upvotes
+          const { data: votes } = await supabase
+            .from('votes')
+            .select('vote_type')
+            .eq('user_id', user.id)
+            .eq('vote_type', 'upvote')
+            .gte('created_at', dateFilter);
+
+          const postCount = posts?.length || 0;
+          const upvotes = votes?.length || 0;
+          const score = postCount * 5 + upvotes * 2;
+
+          return {
+            username: user.username,
+            score,
+            posts: postCount,
+            upvotes: upvotes,
+            ratio: postCount > 0 ? upvotes / postCount : 0
+          };
+        })
+      );
+
+      const sortedUsers = userStats
+        .filter(user => user.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10)
+        .map((user, index) => ({
+          rank: index + 1,
+          ...user
+        }));
+
+      setUsers(sortedUsers);
+    } catch (error) {
+      console.error('Error fetching top users:', error);
+    }
+  };
+
+  const fetchTopPosts = async () => {
+    try {
+      const dateFilter = getDateFilter();
+      
+      const { data: postsData, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          post_tags(
+            tags(name, emoji)
+          )
+        `)
+        .eq('status', 'visible')
+        .gte('created_at', dateFilter)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const postsWithVotes = await Promise.all(
+        postsData.map(async (post) => {
+          const { data: voteData } = await supabase
+            .rpc('get_vote_counts', { post_uuid: post.id });
+
+          let username = "Anonymous";
+          if (!post.is_anonymous && post.user_id) {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('username')
+              .eq('id', post.user_id)
+              .single();
+            
+            username = profileData?.username || "Unknown";
+          }
+
+          const contentString = typeof post.content === 'string' 
+            ? post.content 
+            : JSON.stringify(post.content) || "";
+
+          return {
+            id: post.id,
+            title: post.title || "Untitled",
+            content: contentString,
+            username,
+            upvotes: voteData?.upvotes || 0,
+            created_at: post.created_at,
+            tags: post.post_tags.map((pt: any) => ({
+              emoji: pt.tags.emoji,
+              name: pt.tags.name
+            }))
+          };
+        })
+      );
+
+      const sortedPosts = postsWithVotes
+        .sort((a, b) => b.upvotes - a.upvotes)
+        .slice(0, 10);
+
+      setTopPosts(sortedPosts);
+    } catch (error) {
+      console.error('Error fetching top posts:', error);
+    }
+  };
+
+  const fetchTagRankings = async () => {
+    try {
+      const { data: tagsData, error } = await supabase
+        .from('tags')
+        .select('*');
+
+      if (error) throw error;
+
+      const tagStats = await Promise.all(
+        tagsData.map(async (tag) => {
+          // Count usage
+          const { data: usage } = await supabase
+            .from('post_tags')
+            .select('post_id')
+            .eq('tag_id', tag.id);
+
+          // Count total upvotes for posts with this tag
+          const { data: upvoteData } = await supabase
+            .from('votes')
+            .select('post_id')
+            .eq('vote_type', 'upvote')
+            .in('post_id', usage?.map(u => u.post_id) || []);
+
+          return {
+            name: tag.name,
+            emoji: tag.emoji,
+            usage_count: usage?.length || 0,
+            total_upvotes: upvoteData?.length || 0
+          };
+        })
+      );
+
+      const sortedTags = tagStats
+        .sort((a, b) => b.usage_count - a.usage_count)
+        .slice(0, 10);
+
+      setTagRankings(sortedTags);
+    } catch (error) {
+      console.error('Error fetching tag rankings:', error);
+    }
   };
 
   const getRankIcon = (rank: number) => {
@@ -83,7 +284,17 @@ const Leaderboard = () => {
     }
   };
 
-  const currentData = leaderboardData[selectedPeriod as keyof typeof leaderboardData];
+  if (loading) {
+    return (
+      <Layout customTitle="Leaderboard" showBackButton>
+        <div className="container mx-auto px-4 py-6 max-w-4xl">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout customTitle="Leaderboard" showBackButton>
@@ -120,51 +331,149 @@ const Leaderboard = () => {
             </CardContent>
           </Card>
 
-          {/* Leaderboard */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-yellow-500" />
-                {periods.find(p => p.value === selectedPeriod)?.label} Leaders
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {currentData.map((user, index) => (
-                <div
-                  key={user.rank}
-                  className={cn(
-                    "flex items-center gap-4 p-4 rounded-lg border transition-colors hover:bg-accent/50",
-                    user.rank <= 3 ? "bg-accent/20" : "bg-background"
+          {/* View Tabs */}
+          <Tabs value={selectedView} onValueChange={setSelectedView} className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Top Users
+              </TabsTrigger>
+              <TabsTrigger value="posts" className="flex items-center gap-2">
+                <Trophy className="w-4 h-4" />
+                Top Posts
+              </TabsTrigger>
+              <TabsTrigger value="tags" className="flex items-center gap-2">
+                <Hash className="w-4 h-4" />
+                Tag Rankings
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="users" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-yellow-500" />
+                    {periods.find(p => p.value === selectedPeriod)?.label} Top Users
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {users.length === 0 ? (
+                    <p className="text-center text-muted-foreground">No users found for this period</p>
+                  ) : (
+                    users.map((user) => (
+                      <div
+                        key={user.rank}
+                        className={cn(
+                          "flex items-center gap-4 p-4 rounded-lg border transition-colors hover:bg-accent/50",
+                          user.rank <= 3 ? "bg-accent/20" : "bg-background"
+                        )}
+                      >
+                        <div className="flex-shrink-0">
+                          {getRankIcon(user.rank)}
+                        </div>
+
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-lg">{user.username}</h3>
+                            <Badge className={cn("text-xs", getRankBadgeColor(user.rank))}>
+                              Rank #{user.rank}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span>📝 {user.posts} posts</span>
+                            <span>👍 {user.upvotes} upvotes</span>
+                            <span>📊 {user.ratio?.toFixed(1)} ratio</span>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-primary">{user.score}</div>
+                          <div className="text-xs text-muted-foreground">points</div>
+                        </div>
+                      </div>
+                    ))
                   )}
-                >
-                  {/* Rank Icon */}
-                  <div className="flex-shrink-0">
-                    {getRankIcon(user.rank)}
-                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                  {/* User Info */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-lg">{user.username}</h3>
-                      <Badge className={cn("text-xs", getRankBadgeColor(user.rank))}>
-                        Rank #{user.rank}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>📝 {user.posts} posts</span>
-                      <span>👍 {user.upvotes} upvotes</span>
-                    </div>
-                  </div>
+            <TabsContent value="posts" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-yellow-500" />
+                    {periods.find(p => p.value === selectedPeriod)?.label} Top Posts
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {topPosts.length === 0 ? (
+                    <p className="text-center text-muted-foreground">No posts found for this period</p>
+                  ) : (
+                    topPosts.map((post, index) => (
+                      <div
+                        key={post.id}
+                        className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {getRankIcon(index + 1)}
+                            <h3 className="font-semibold">{post.title}</h3>
+                            <div className="flex gap-1">
+                              {post.tags.map((tag, tagIndex) => (
+                                <span key={tagIndex} className="text-sm">
+                                  {tag.emoji}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <Badge variant="secondary">
+                            👍 {post.upvotes}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          By {post.username} • {new Date(post.created_at).toLocaleDateString()}
+                        </p>
+                        <p className="text-sm line-clamp-2">{post.content}</p>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                  {/* Score */}
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-primary">{user.score}</div>
-                    <div className="text-xs text-muted-foreground">points</div>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+            <TabsContent value="tags" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Hash className="w-5 h-5 text-primary" />
+                    Most Popular Tags
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {tagRankings.map((tag, index) => (
+                    <div
+                      key={tag.name}
+                      className="flex items-center gap-4 p-3 border rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex-shrink-0">
+                        {getRankIcon(index + 1)}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">{tag.emoji}</span>
+                        <div>
+                          <h3 className="font-semibold">{tag.name}</h3>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span>📝 {tag.usage_count} uses</span>
+                            <span>👍 {tag.total_upvotes} upvotes</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
 
           {/* Scoring Info */}
           <Card>
