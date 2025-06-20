@@ -19,7 +19,6 @@ export interface Post {
   isSaved: boolean;
   user_id: string;
   editHistory?: Array<{ content: any; timestamp: string }>;
-  isAI?: boolean;
 }
 
 interface VoteCounts {
@@ -31,53 +30,6 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Helper function to convert JSON content to HTML
-  const convertJsonToHtml = (jsonContent: any): string => {
-    if (!jsonContent || typeof jsonContent !== 'object') {
-      return jsonContent?.toString() || "";
-    }
-
-    try {
-      if (jsonContent.content && Array.isArray(jsonContent.content)) {
-        return jsonContent.content
-          .map((node: any) => {
-            if (node.type === 'paragraph') {
-              const textContent = node.content?.map((textNode: any) => {
-                if (textNode.type === 'text') {
-                  let text = textNode.text || '';
-                  if (textNode.marks) {
-                    textNode.marks.forEach((mark: any) => {
-                      switch (mark.type) {
-                        case 'bold':
-                          text = `<strong>${text}</strong>`;
-                          break;
-                        case 'italic':
-                          text = `<em>${text}</em>`;
-                          break;
-                        case 'underline':
-                          text = `<u>${text}</u>`;
-                          break;
-                      }
-                    });
-                  }
-                  return text;
-                }
-                return '';
-              }).join('') || '';
-              return textContent ? `<p>${textContent}</p>` : '';
-            }
-            return '';
-          })
-          .filter(content => content) // Remove empty content
-          .join('');
-      }
-    } catch (error) {
-      console.error('Error converting JSON to HTML:', error);
-    }
-
-    return jsonContent?.toString() || "";
-  };
 
   const fetchPosts = async () => {
     try {
@@ -136,13 +88,10 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
             username = profileData?.username || "Unknown";
           }
 
-          // Convert JSON content to HTML for display
-          const displayContent = convertJsonToHtml(post.content);
-
           return {
             id: post.id,
             title: post.title || "Untitled",
-            content: displayContent,
+            content: post.content || "",
             tags: post.post_tags.map((pt: any) => ({
               emoji: pt.tags.emoji,
               name: pt.tags.name
@@ -155,8 +104,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
             isNSFW: post.post_tags.some((pt: any) => pt.tags.is_sensitive),
             userVote,
             isSaved,
-            user_id: post.user_id,
-            isAI: false
+            user_id: post.user_id
           };
         })
       );
@@ -176,7 +124,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
 
   const createPost = async (postData: { 
     title: string;
-    content: any;
+    content: string;
     tags: string[];
     isAnonymous: boolean;
   }) => {
@@ -390,10 +338,7 @@ export const usePosts = (sortBy: "hot" | "new" | "top" = "hot", selectedTags: st
       setPosts(prevPosts =>
         prevPosts.map(p =>
           p.id === postId
-            ? {
-                ...p,
-                content: convertJsonToHtml(content)
-              }
+            ? { ...p, content: content }
             : p
         )
       );

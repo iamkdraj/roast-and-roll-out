@@ -15,19 +15,34 @@ const Index = () => {
   const [filteredPosts, setFilteredPosts] = useState(posts);
   const [sortBy, setSortBy] = useState("newest");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState("all");
   const [showNSFW, setShowNSFW] = useState(localStorage.getItem('showNSFW') === 'true');
 
   useEffect(() => {
     let filtered = [...posts];
-
-    // Remove AI posts
-    filtered = filtered.filter(post => !post.isAI);
 
     // Filter by NSFW setting
     if (!showNSFW) {
       filtered = filtered.filter(post => !post.isNSFW);
     }
 
+    // Filter by language
+    if (selectedLanguage !== "all") {
+      // This would need to be implemented based on post content analysis
+      // For now, we'll just filter based on content patterns
+      if (selectedLanguage === "hindi") {
+        filtered = filtered.filter(post => 
+          /[\u0900-\u097F]/.test(post.content) || /[\u0900-\u097F]/.test(post.title)
+        );
+      } else if (selectedLanguage === "english") {
+        filtered = filtered.filter(post => 
+          !/[\u0900-\u097F]/.test(post.content) && !/[\u0900-\u097F]/.test(post.title)
+        );
+      }
+      // Hinglish would be a mix, so we don't filter it specifically
+    }
+
+    // Filter by tags
     if (selectedTags.length > 0) {
       filtered = filtered.filter(post => 
         selectedTags.some(tagId => {
@@ -37,6 +52,7 @@ const Index = () => {
       );
     }
 
+    // Sort posts
     switch (sortBy) {
       case "newest":
         filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -51,26 +67,30 @@ const Index = () => {
         const dayAgo = new Date();
         dayAgo.setDate(dayAgo.getDate() - 1);
         filtered = filtered.filter(post => new Date(post.createdAt) >= dayAgo);
+        filtered.sort((a, b) => b.upvotes - a.upvotes);
         break;
       case "week":
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
         filtered = filtered.filter(post => new Date(post.createdAt) >= weekAgo);
+        filtered.sort((a, b) => b.upvotes - a.upvotes);
         break;
       case "month":
         const monthAgo = new Date();
         monthAgo.setMonth(monthAgo.getMonth() - 1);
         filtered = filtered.filter(post => new Date(post.createdAt) >= monthAgo);
+        filtered.sort((a, b) => b.upvotes - a.upvotes);
         break;
       case "year":
         const yearAgo = new Date();
         yearAgo.setFullYear(yearAgo.getFullYear() - 1);
         filtered = filtered.filter(post => new Date(post.createdAt) >= yearAgo);
+        filtered.sort((a, b) => b.upvotes - a.upvotes);
         break;
     }
 
     setFilteredPosts(filtered);
-  }, [posts, selectedTags, sortBy, showNSFW, tags]);
+  }, [posts, selectedTags, sortBy, selectedLanguage, showNSFW, tags]);
 
   // Update NSFW setting from localStorage
   useEffect(() => {
@@ -123,42 +143,55 @@ const Index = () => {
         tags={tags}
         selectedTags={selectedTags}
         onTagSelect={handleTagSelect}
-        onClearFilters={() => setSelectedTags([])}
+        onClearFilters={() => {
+          setSelectedTags([]);
+          setSelectedLanguage("all");
+          setSortBy("newest");
+        }}
         onSortChange={setSortBy}
         currentSort={sortBy}
+        selectedLanguage={selectedLanguage}
+        onLanguageChange={setSelectedLanguage}
       />
 
       {/* Main Content */}
-      <main className="container mx-auto px-4">
+      <main className="container mx-auto px-4 pt-4">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
           className="space-y-6"
         >
-          {filteredPosts.map((post, index) => (
-            <motion.div
-              key={post.id}
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ 
-                duration: 0.5, 
-                delay: index * 0.1,
-                ease: "easeOut"
-              }}
-            >
-              <PostCard
-                post={post}
-                onVote={vote}
-                onSave={savePost}
-                onReport={reportPost}
-                onDelete={deletePost}
-                onEdit={handleEdit}
-                showNSFW={showNSFW}
-                onUsernameClick={handleUsernameClick}
-              />
-            </motion.div>
-          ))}
+          {filteredPosts.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground text-lg">No posts found matching your filters</p>
+              <p className="text-sm text-muted-foreground mt-2">Try adjusting your filters or create a new post!</p>
+            </div>
+          ) : (
+            filteredPosts.map((post, index) => (
+              <motion.div
+                key={post.id}
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ 
+                  duration: 0.5, 
+                  delay: index * 0.1,
+                  ease: "easeOut"
+                }}
+              >
+                <PostCard
+                  post={post}
+                  onVote={vote}
+                  onSave={savePost}
+                  onReport={reportPost}
+                  onDelete={deletePost}
+                  onEdit={handleEdit}
+                  showNSFW={showNSFW}
+                  onUsernameClick={handleUsernameClick}
+                />
+              </motion.div>
+            ))
+          )}
         </motion.div>
       </main>
     </Layout>

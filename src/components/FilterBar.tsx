@@ -12,6 +12,8 @@ interface FilterBarProps {
   onClearFilters: () => void;
   onSortChange: (sort: string) => void;
   currentSort: string;
+  selectedLanguage: string;
+  onLanguageChange: (language: string) => void;
 }
 
 export const FilterBar = ({ 
@@ -20,29 +22,34 @@ export const FilterBar = ({
   onTagSelect, 
   onClearFilters,
   onSortChange,
-  currentSort 
+  currentSort,
+  selectedLanguage,
+  onLanguageChange
 }: FilterBarProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState("all");
 
   const languages = [
+    { value: "all", label: "All" },
     { value: "hindi", label: "Hindi" },
     { value: "english", label: "English" },
-    { value: "hinglish", label: "Hinglish" },
-    { value: "all", label: "All" }
+    { value: "hinglish", label: "Hinglish" }
   ];
 
   const timeFilters = [
+    { value: "newest", label: "All Time" },
     { value: "day", label: "Today" },
     { value: "week", label: "This Week" },
     { value: "month", label: "This Month" },
-    { value: "year", label: "This Year" },
-    { value: "newest", label: "All Time" }
+    { value: "year", label: "This Year" }
   ];
 
   const handleTagClick = (tagId: string) => {
     onTagSelect(tagId);
   };
+
+  const activeFiltersCount = selectedTags.length + 
+    (selectedLanguage !== "all" ? 1 : 0) + 
+    (currentSort !== "newest" ? 1 : 0);
 
   return (
     <>
@@ -56,9 +63,9 @@ export const FilterBar = ({
         >
           <Filter className="w-4 h-4" />
           <span className="ml-2">Filter</span>
-          {(selectedTags.length > 0 || selectedLanguage !== "all" || currentSort !== "newest") && (
+          {activeFiltersCount > 0 && (
             <span className="ml-1 text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-              {selectedTags.length + (selectedLanguage !== "all" ? 1 : 0) + (currentSort !== "newest" ? 1 : 0)}
+              {activeFiltersCount}
             </span>
           )}
         </Button>
@@ -68,16 +75,12 @@ export const FilterBar = ({
           <div className="absolute right-0 top-12 w-80 bg-background border border-border rounded-lg shadow-xl p-4 max-h-96 overflow-y-auto">
             <div className="space-y-4">
               {/* Clear Filters */}
-              {(selectedTags.length > 0 || selectedLanguage !== "all" || currentSort !== "newest") && (
+              {activeFiltersCount > 0 && (
                 <div className="flex justify-end">
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => {
-                      onClearFilters();
-                      setSelectedLanguage("all");
-                      onSortChange("newest");
-                    }}
+                    onClick={onClearFilters}
                     className="h-7 text-xs text-muted-foreground hover:text-foreground"
                   >
                     <X className="h-3.5 w-3.5 mr-1" />
@@ -95,7 +98,7 @@ export const FilterBar = ({
                       key={lang.value}
                       variant="ghost"
                       size="sm"
-                      onClick={() => setSelectedLanguage(lang.value)}
+                      onClick={() => onLanguageChange(lang.value)}
                       className={cn(
                         "h-8 text-xs w-full",
                         selectedLanguage === lang.value
