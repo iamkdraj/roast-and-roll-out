@@ -115,25 +115,25 @@ const CreatePost = () => {
           transition={{ delay: 0.1 }}
         >
           {/* Title Input */}
-          <div className="relative">
+          <div className="relative border-2 border-border rounded-lg p-4 bg-background">
+            <Label className="absolute -top-3 left-3 px-2 bg-background text-xs font-medium text-muted-foreground">
+              Title
+            </Label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter your post title..."
-              className="text-lg font-semibold border-2 border-border focus:border-primary bg-background pt-6 pb-3 px-4"
+              className="border-0 text-lg font-semibold bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
               maxLength={200}
             />
-            <Label className="absolute top-2 left-4 text-xs font-medium text-muted-foreground">
-              Title
-            </Label>
           </div>
 
           {/* Content Input */}
-          <div className="relative">
-            <div className="border-2 border-border rounded-lg bg-background focus-within:border-primary transition-colors pt-6">
-              <Label className="absolute top-2 left-4 text-xs font-medium text-muted-foreground z-10">
-                Body
-              </Label>
+          <div className="relative border-2 border-border rounded-lg bg-background focus-within:border-primary transition-colors p-4">
+            <Label className="absolute -top-3 left-3 px-2 bg-background text-xs font-medium text-muted-foreground">
+              Body
+            </Label>
+            <div className="mt-2">
               <RichTextEditor
                 content={content}
                 onChange={setContent}
